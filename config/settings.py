@@ -1,4 +1,4 @@
-BASE_URL = "https://lh-proxy.onrender.com"
+BASE_URL = "https://api.lufthansa.com"
 
 CATALOG = "workspace"
 SCHEMA = "data_intelligence"
