@@ -6,23 +6,50 @@ from config.settings import (
     REQUEST_TIMEOUT,
     MAX_RETRIES,
     BASE_BACKOFF,
+    RETRYABLE_STATUSES,
 )
 
-def create_session(password: str) -> requests.Session:
+TOKEN_URL = "https://api.lufthansa.com/v1/oauth/token"
+
+
+def create_session(client_id: str, client_secret: str) -> requests.Session:
     """
-    Create a configured requests session for the Lufthansa proxy.
+    Create a configured requests session for the Lufthansa API using OAuth2.
+    Automatically fetches and injects the Bearer token.
     """
+
+    # --- 1. Request token ---
+    response = requests.post(
+        TOKEN_URL,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        data={
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "grant_type": "client_credentials",
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+    token_data = response.json()
+
+    access_token = token_data["access_token"]
+    expires_in = int(token_data["expires_in"])
+    print(f"Token expires in {expires_in} seconds")
+    # --- 2. Create session ---
     session = requests.Session()
 
     session.headers.update(
         {
-            "password": password,
+            "Authorization": f"Bearer {access_token}",
             "Accept": "application/json",
         }
     )
 
-    return session
+   
+    session.token_expires_at = time.time() + expires_in
 
+    return session
+    
 def request_with_retry(
     session: requests.Session,
     url: str,
@@ -44,7 +71,7 @@ def request_with_retry(
             if response.status_code == 200:
                 return response
 
-            if response.status_code in RETRYABLE_STATUSAS:
+            if response.status_code in RETRYABLE_STATUSES:
                 print(f"Request failed for Attempt {attempt}/{MAX_RETRIES}: {response.status_code} {response.text}")
                 if attempt < MAX_RETRIES:
                     print(f"Sleeping for {backoff} seconds...")
