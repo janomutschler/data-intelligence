@@ -8,11 +8,11 @@ from config.settings import (
     SLEEP_SECONDS,
 )
 
-from common.api_client import request_with_retry
-from common.utils import utc_now_str, get_target_window_start
-from common.paths import flight_status_directory
-from common.storage import mkdirs, write_json
-from common.logging import (
+from support.api_client import request_with_retry
+from support.utils import utc_now_str, get_target_window_start
+from support.paths import flight_status_directory
+from support.storage import mkdirs, write_json
+from support.logging import (
     create_flight_status_log_table,
     append_flight_status_log,
 )

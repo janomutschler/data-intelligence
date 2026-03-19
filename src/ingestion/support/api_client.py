@@ -1,7 +1,7 @@
 import time
 import requests
 from typing import Optional, Dict, Any
-from common.utils import utc_now_str
+from support.utils import utc_now_str
 from config.settings import (
     REQUEST_TIMEOUT,
     MAX_RETRIES,
