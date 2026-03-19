@@ -13,7 +13,6 @@ variables:
     default: "workspace"
   schema:
     default: "data_intelligence_dev"
-    type: complex
   volume:
     default: "raw_lh_data"
 
