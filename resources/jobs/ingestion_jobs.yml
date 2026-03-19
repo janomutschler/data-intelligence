@@ -10,11 +10,18 @@ resources:
       schedule:
         quartz_cron_expression: 45 5 0/4 * * ?
         timezone_id: UTC
-        pause_status: UNPAUSED
+        pause_status: PAUSED
       tasks:
         - task_key: run_flight_status_entrypointpy
           spark_python_task:
             python_file: ../../src/ingestion/run_flight_status_entrypoint.py
+            parameters:
+              - --catalog
+              - workspace
+              - --schema
+              - data_intelligence_prod
+              - --volume
+              - raw_lh_data
           environment_key: Default
       environments:
         - environment_key: Default
@@ -33,11 +40,18 @@ resources:
       schedule:
         quartz_cron_expression: 20 15 21 19 * ?
         timezone_id: UTC
-        pause_status: UNPAUSED
+        pause_status: PAUSED
       tasks:
         - task_key: run_reference_entrypointpy
           spark_python_task:
             python_file: ../../src/ingestion/run_reference_entrypoint.py
+            parameters:
+              - --catalog
+              - workspace
+              - --schema
+              - data_intelligence_prod
+              - --volume
+              - raw_lh_data
           environment_key: Default
       environments:
         - environment_key: Default

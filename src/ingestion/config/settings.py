@@ -1,10 +1,16 @@
-import os
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--catalog", required=True)
+parser.add_argument("--schema", required=True)
+parser.add_argument("--volume", required=True)
+args = parser.parse_args()
+
+CATALOG = args.catalog
+SCHEMA = args.schema
+VOLUME = args.volume
 
 BASE_URL = "https://api.lufthansa.com"
-
-CATALOG = os.getenv("CATALOG", "workspace")
-SCHEMA = os.getenv("SCHEMA", "data_intelligence_dev")
-VOLUME = os.getenv("VOLUME", "raw_lh_data")
 
 AIRPORTS = ["FRA", "MUC", "ZRH", "VIE", "BRU", "BER", "HAM", "DUS"]
 
