@@ -1,8 +1,10 @@
+import os
+
 BASE_URL = "https://api.lufthansa.com"
 
-CATALOG = "workspace"
-SCHEMA = "data_intelligence"
-VOLUME = "raw_lh_data"
+CATALOG = os.getenv("CATALOG", "workspace")
+SCHEMA = os.getenv("SCHEMA", "data_intelligence_dev")
+VOLUME = os.getenv("VOLUME", "raw_lh_data")
 
 AIRPORTS = ["FRA", "MUC", "ZRH", "VIE", "BRU", "BER", "HAM", "DUS"]
 

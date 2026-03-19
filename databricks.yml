@@ -1,0 +1,24 @@
+bundle:
+  name: lh-data-platform
+
+include:
+  - resources/jobs/*.yml
+
+sync:
+  include:
+    - src/**
+
+variables:
+  catalog:
+    default: workspace
+  schema:
+    default: data_intelligence_dev
+  volume:
+    default: raw_lh_data
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      host: https://dbc-1189a44d-7664.cloud.databricks.com/
