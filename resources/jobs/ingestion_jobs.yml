@@ -10,7 +10,7 @@ resources:
       schedule:
         quartz_cron_expression: 45 5 0/4 * * ?
         timezone_id: UTC
-        pause_status: UNPAUSED
+        pause_status: PAUSED
       tasks:
         - task_key: run_flight_status_entrypointpy
           spark_python_task:
@@ -39,7 +39,7 @@ resources:
       schedule:
         quartz_cron_expression: 45 5 2/4 * * ?
         timezone_id: UTC
-        pause_status: UNPAUSED
+        pause_status: PAUSED
       tasks:
         - task_key: run_schedules_entrypointpy
           spark_python_task:
@@ -68,7 +68,7 @@ resources:
       schedule:
         quartz_cron_expression: 20 15 21 19 * ?
         timezone_id: UTC
-        pause_status: UNPAUSED
+        pause_status: PAUSED
       tasks:
         - task_key: run_reference_entrypointpy
           spark_python_task:
