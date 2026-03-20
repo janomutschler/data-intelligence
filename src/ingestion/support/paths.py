@@ -13,7 +13,7 @@ def flight_status_directory(
 
     dataset = "schedules" if schedules else "flight_status"
     return (
-        f"{RAW_BASE_PATH}/{dataset}/{direction}"
+        f"{RAW_BASE_PATH}/{dataset}/direction={direction}"
         f"/airport={airport}"
         f"/date={flight_date}"
         f"/window_start={window_clean}"
