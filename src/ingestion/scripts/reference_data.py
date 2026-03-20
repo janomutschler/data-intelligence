@@ -1,3 +1,7 @@
+"""
+Handles ingestion of reference data from Lufthansa API
+and stores raw JSON into Unity Catalog volumes.
+"""
 import json
 import time
 from functools import partial
@@ -7,11 +11,11 @@ from config.settings import (
     SLEEP_SECONDS,
 )
 
-from common.api_client import request_with_retry
-from common.utils import utc_now_str
-from common.paths import reference_data_directory
-from common.storage import mkdirs, write_json
-from common.logging import (
+from support.api_client import request_with_retry
+from support.utils import utc_now_str
+from support.paths import reference_data_directory
+from support.storage import mkdirs, write_json
+from support.logging import (
     create_reference_data_log_table,
     append_reference_data_log,
 )

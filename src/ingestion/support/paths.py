@@ -7,11 +7,13 @@ def flight_status_directory(
     airport: str,
     flight_date: str,
     window_start: str,
+    schedules: bool = False,
 ) -> str:
     window_clean = window_start.replace(":", "-")
 
+    dataset = "schedules" if schedules else "flight_status"
     return (
-        f"{RAW_BASE_PATH}/flight_status/{direction}"
+        f"{RAW_BASE_PATH}/{dataset}/{direction}"
         f"/airport={airport}"
         f"/date={flight_date}"
         f"/window_start={window_clean}"

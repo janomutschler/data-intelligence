@@ -74,7 +74,6 @@ schedules_log_schema = StructType([
     StructField("params_json", StringType(), True),
 ])
 
-
 def create_flight_status_log_table(spark) -> None:
     spark.sql(f"""
     CREATE TABLE IF NOT EXISTS {FLIGHT_STATUS_LOG_TABLE} (

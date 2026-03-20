@@ -1,7 +1,7 @@
 resources:
   jobs:
     run_flight_status_entrypoint_py:
-      name: run_flight_status_dev
+      name: run_flight_status
       email_notifications:
         on_failure:
           - jmutschl42@gmail.com
@@ -10,18 +10,18 @@ resources:
       schedule:
         quartz_cron_expression: 45 5 0/4 * * ?
         timezone_id: UTC
-        pause_status: PAUSED
+        pause_status: UNPAUSED
       tasks:
         - task_key: run_flight_status_entrypointpy
           spark_python_task:
             python_file: ../../src/ingestion/run_flight_status_entrypoint.py
             parameters:
               - --catalog
-              - workspace
+              - ${var.catalog}
               - --schema
-              - data_intelligence_prod
+              - ${var.schema}
               - --volume
-              - raw_lh_data
+              - ${var.volume}
           environment_key: Default
       environments:
         - environment_key: Default
@@ -29,9 +29,37 @@ resources:
             environment_version: "4"
       performance_target: PERFORMANCE_OPTIMIZED
 
+    run_schedules_entrypoint_py:
+      name: run_schedules
+      email_notifications:
+        on_failure:
+          - jmutschl42@gmail.com
+      notification_settings:
+        no_alert_for_skipped_runs: true
+      schedule:
+        quartz_cron_expression: 45 5 2/4 * * ?
+        timezone_id: UTC
+        pause_status: UNPAUSED
+      tasks:
+        - task_key: run_schedules_entrypointpy
+          spark_python_task:
+            python_file: ../../src/ingestion/run_schedules_entrypoint.py
+            parameters:
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+              - --volume
+              - ${var.volume}
+          environment_key: Default
+      environments:
+        - environment_key: Default
+          spec:
+            environment_version: "4"
+      performance_target: PERFORMANCE_OPTIMIZED
 
     run_reference_entrypoint_py:
-      name: run_reference_dev
+      name: run_reference
       email_notifications:
         on_failure:
           - jmutschl42@gmail.com
@@ -40,18 +68,18 @@ resources:
       schedule:
         quartz_cron_expression: 20 15 21 19 * ?
         timezone_id: UTC
-        pause_status: PAUSED
+        pause_status: UNPAUSED
       tasks:
         - task_key: run_reference_entrypointpy
           spark_python_task:
             python_file: ../../src/ingestion/run_reference_entrypoint.py
             parameters:
               - --catalog
-              - workspace
+              - ${var.catalog}
               - --schema
-              - data_intelligence_prod
+              - ${var.schema}
               - --volume
-              - raw_lh_data
+              - ${var.volume}
           environment_key: Default
       environments:
         - environment_key: Default

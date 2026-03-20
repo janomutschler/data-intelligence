@@ -30,7 +30,7 @@ targets:
     presets:
       name_prefix: 'production_'
       tags:
-          prod: true
+          prod: prod
     workspace:
       host: https://dbc-1189a44d-7664.cloud.databricks.com/
       root_path: /Workspace/Users/jmutschl42@gmail.com/.bundle/${bundle.name}/${bundle.target}

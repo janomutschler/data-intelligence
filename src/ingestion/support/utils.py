@@ -22,6 +22,8 @@ def floor_to_4h_window(dt: datetime) -> datetime:
 
 def get_target_window_start(
     delay_hours: int = 0,
+    schedules: bool = False,
+
 ) -> str:
     """
     Determine the final target window start for ingestion.
@@ -40,6 +42,9 @@ def get_target_window_start(
     run_time = datetime.now(UTC)
 
     window_start = floor_to_4h_window(run_time)
-    target_window = window_start - timedelta(hours=delay_hours)
+    if schedules:
+        target_window = window_start + timedelta(hours=delay_hours)
+    else:
+        target_window = window_start - timedelta(hours=delay_hours)
 
     return target_window.strftime("%Y-%m-%dT%H:%M")
