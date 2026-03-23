@@ -84,6 +84,7 @@ def fetch_reference_pages(
         directory = reference_data_directory(
             reference_type=reference_type,
             reference_date=reference_date,
+            run_id=ctx.run_id,
         )
         file_path = f"{directory}/page={page}.json"
         mkdirs(directory, ctx.dbutils)

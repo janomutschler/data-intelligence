@@ -1,3 +1,7 @@
+"""
+Handles ingestion of operational data from Lufthansa API
+and stores raw JSON into Unity Catalog volumes.
+"""
 import json
 import time
 from functools import partial
@@ -50,6 +54,7 @@ def fetch_airport_window(
             airport=airport,
             flight_date=target_date,
             window_start=window_start,
+            run_id=ctx.run_id,
             schedules=schedules,
         )
         file_path = f"{directory}/page={page}.json"
