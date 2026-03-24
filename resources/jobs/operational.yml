@@ -1,0 +1,66 @@
+resources:
+  jobs:
+    operational_end_to_end:
+      name: operational-end-to-end-${bundle.target}
+
+      email_notifications:
+        on_failure:
+          - jmutschl42@gmail.com
+
+      notification_settings:
+        no_alert_for_skipped_runs: true
+
+      schedule:
+        quartz_cron_expression: 45 5 0/4 * * ?
+        timezone_id: UTC
+        pause_status: PAUSED
+
+      tasks:
+        - task_key: run_operational_entrypoint_py
+          spark_python_task:
+            python_file: ../../src/ingestion/run_operational_entrypoint.py
+            parameters:
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+              - --volume
+              - ${var.volume}
+          environment_key: Default
+
+        - task_key: run_bronze_operational_pipeline
+          depends_on:
+            - task_key: run_operational_entrypoint_py
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.bronze_raw_operational_ingestion_pipeline.id}
+
+        - task_key: run_silver_operational_pipeline_py
+          depends_on:
+            - task_key: run_bronze_operational_pipeline
+          spark_python_task:
+            python_file: ../../src/transformation/silver_operational_pipeline.py
+            parameters:
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+          environment_key: Default
+
+        - task_key: run_gold_pipeline_py
+          depends_on:
+            - task_key: run_silver_operational_pipeline_py
+          spark_python_task:
+            python_file: ../../src/transformation/gold_pipeline.py
+            parameters:
+              - --catalog
+              - ${var.catalog}
+              - --schema
+              - ${var.schema}
+          environment_key: Default
+
+      environments:
+        - environment_key: Default
+          spec:
+            environment_version: "4"
+
+      performance_target: PERFORMANCE_OPTIMIZED
