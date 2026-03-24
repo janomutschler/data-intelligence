@@ -25,22 +25,6 @@ def raw_table_df(source_subpath: str):
 
 
 @dp.table(
-    name=f"{CATALOG}.{SCHEMA}.bronze_flight_status_raw",
-    comment="Bronze raw ingestion table for Lufthansa flight status payloads stored as full JSON strings."
-)
-def bronze_flight_status_raw():
-    return raw_table_df("flight_status")
-
-
-@dp.table(
-    name=f"{CATALOG}.{SCHEMA}.bronze_schedules_raw",
-    comment="Bronze raw ingestion table for Lufthansa schedules payloads stored as full JSON strings."
-)
-def bronze_schedules_raw():
-    return raw_table_df("schedules")
-
-
-@dp.table(
     name=f"{CATALOG}.{SCHEMA}.bronze_airports_raw",
     comment="Bronze raw ingestion table for Lufthansa airport reference payloads stored as full JSON strings."
 )

@@ -1,7 +1,7 @@
 resources:
   pipelines:
-    bronze_raw_ingestion_pipeline:
-      name: bronze_raw_ingestion_pipeline-${bundle.target}
+    bronze_raw_reference_ingestion_pipeline:
+      name: bronze_raw_reference_ingestion_pipeline-${bundle.target}
       catalog: ${var.catalog}
       target: ${var.schema}
       serverless: true
@@ -12,16 +12,19 @@ resources:
         volume: ${var.volume}
       libraries:
         - file:
-            path: ../../src/transformation/run_bronze_raw_ingestion_pipeline.py
+            path: ../../src/transformation/bronze_reference_pipeline.py
+
+    bronze_raw_operational_ingestion_pipeline:
+      name: bronze_raw_operational_ingestion_pipeline-${bundle.target}
+      catalog: ${var.catalog}
+      target: ${var.schema}
+      serverless: true
+      continuous: false
+      configuration:
+        catalog: ${var.catalog}
+        schema: ${var.schema}
+        volume: ${var.volume}
+      libraries:
+        - file:
+            path: ../../src/transformation/bronze_operational_pipeline.py
           
-  jobs:
-    bronze_raw_ingestion_schedule:
-      name: bronze-raw-ingestion-schedule-${bundle.target}
-      tasks:
-        - task_key: run_bronze_pipeline
-          pipeline_task:
-            pipeline_id: ${resources.pipelines.bronze_raw_ingestion_pipeline.id}
-      schedule:
-        quartz_cron_expression: 0 30 0/2 * * ?
-        timezone_id: UTC
-        pause_status: UNPAUSED
