@@ -19,6 +19,8 @@ from support.storage import mkdirs, write_json
 from support.logging import (
     append_flight_status_log,
     append_schedules_log,
+    create_flight_status_log_table,
+    create_schedules_log_table,
 )
 
 LIMIT = 50
@@ -199,3 +201,13 @@ def fetch_all_airports_for_window(
 
     print(f"Finished ingestion. Total pages fetched: {total_pages}")
     return total_pages
+
+def init_operational_ingestion(spark) -> str:
+    """
+    Ensure required log table exists and return run_id for this execution.
+    """
+    create_schedules_log_table(spark)
+    create_flight_status_log_table(spark)
+    run_id = utc_now_str()
+
+    return run_id

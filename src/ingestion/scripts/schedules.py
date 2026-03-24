@@ -1,5 +1,4 @@
 from support.utils import utc_now_str
-from support.logging import create_schedules_log_table
 from scripts.operational_data import fetch_all_airports_for_window
 
 def run_schedules_ingestion(ctx) -> int:
@@ -26,11 +25,3 @@ def run_schedules_ingestion(ctx) -> int:
     print(f"Total pages fetched: {total_pages_departures + total_pages_arrivals}")
     return total_pages_departures + total_pages_arrivals
 
-def init_schedules_ingestion(spark) -> str:
-    """
-    Ensure required log table exists and return run_id for this execution.
-    """
-    create_schedules_log_table(spark)
-    run_id = utc_now_str()
-
-    return run_id
