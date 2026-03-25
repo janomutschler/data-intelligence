@@ -1,11 +1,47 @@
 from pyspark.sql import functions as F
+from pyspark.sql.types import (
+    StructType,
+    StructField,
+    DateType,
+    StringType,
+    IntegerType,
+    LongType,
+    DoubleType,
+)
 
+
+def ensure_gold_departure_airport_hourly_table(spark, gold_table: str):
+    if not spark.catalog.tableExists(gold_table):
+        schema = StructType([
+            StructField("flight_date", DateType(), True),
+            StructField("departure_airport_code", StringType(), True),
+            StructField("departure_hour", IntegerType(), True),
+            StructField("total_flights", LongType(), True),
+            StructField("cancelled_flights", LongType(), True),
+            StructField("avg_departure_delay_minutes", DoubleType(), True),
+            StructField("avg_arrival_delay_minutes", DoubleType(), True),
+            StructField("on_time_departures", LongType(), True),
+            StructField("on_time_arrivals", LongType(), True),
+            StructField("operated_flights", LongType(), True),
+            StructField("departure_otp_15_pct", DoubleType(), True),
+            StructField("arrival_otp_15_pct", DoubleType(), True),
+        ])
+
+        empty_df = spark.createDataFrame([], schema)
+
+        (
+            empty_df.write
+            .format("delta")
+            .mode("overwrite")
+            .saveAsTable(gold_table)
+        )
 
 def build_gold_departure_airport_hourly(
     spark,
     silver_table: str,
     gold_table: str,
 ):
+    ensure_gold_departure_airport_hourly_table(spark, gold_table)
     gold_df = (
         spark.table(silver_table)
         .filter(
@@ -60,17 +96,21 @@ def build_gold_departure_airport_hourly(
             ).alias("on_time_arrivals"),
         )
         .withColumn(
+            "operated_flights",
+            F.col("total_flights") - F.col("cancelled_flights")
+        )
+        .withColumn(
             "departure_otp_15_pct",
             F.when(
-                F.col("total_flights") > 0,
-                F.col("on_time_departures") / F.col("total_flights")
+                F.col("operated_flights") > 0,
+                F.col("on_time_departures") / F.col("operated_flights")
             ).otherwise(F.lit(0.0))
         )
         .withColumn(
             "arrival_otp_15_pct",
             F.when(
-                F.col("total_flights") > 0,
-                F.col("on_time_arrivals") / F.col("total_flights")
+                F.col("operated_flights") > 0,
+                F.col("on_time_arrivals") / F.col("operated_flights")
             ).otherwise(F.lit(0.0))
         )
     )
