@@ -14,7 +14,7 @@ The purpose of this implementation was to gain a deeper understanding of how dat
 
 While this approach required significantly more development effort, it provided valuable insights into the underlying mechanics of modern data pipelines.
 
-The current `main` branch reflects a production-oriented approach, leveraging Databricks-native functionality to improve:
+The current `main` (`dev`) branch reflects a production-oriented approach, leveraging Databricks-native functionality to improve:
 
 - Maintainability  
 - Scalability  
