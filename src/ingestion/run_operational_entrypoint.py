@@ -17,7 +17,7 @@ def main():
         run_id=run_id,
     )
 
-    run_schedules_ingestion(ctx)
+    # run_schedules_ingestion(ctx)
     run_flight_status_ingestion(ctx)
 
 if __name__ == "__main__":

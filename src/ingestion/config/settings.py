@@ -2,13 +2,11 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--catalog", required=True)
-parser.add_argument("--schema", required=True)
-parser.add_argument("--volume", required=True)
 args = parser.parse_args()
 
 CATALOG = args.catalog
-SCHEMA = args.schema
-VOLUME = args.volume
+SCHEMA = "raw_data"
+VOLUME = "raw_lh_data"
 
 BASE_URL = "https://api.lufthansa.com"
 
@@ -20,11 +18,8 @@ BASE_BACKOFF = 2
 SLEEP_SECONDS = 1
 
 
-AIRPORTS = ["FRA", "MUC", "ZRH", "VIE", "BRU", "BER",
-            "HAM", "DUS", "CDG", "LHR", "AMS", "MAD",
-            "FCO", "BCN", "MXP", "VCE", "CPH", "ARN",
-            "DUB", "LIS", "JFK", "EWR", "ORD", "LAX",
-            "DXB", "SIN", "DOH", "DEL"]
+AIRPORTS = ["FRA", "MUC", "ZRH", "VIE", "BRU",
+            "BER", "HAM", "DUS", "LHR", "FCO"]
         
 """
 This list of airports is designed to maximize:
