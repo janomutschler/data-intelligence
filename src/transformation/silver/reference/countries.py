@@ -1,25 +1,40 @@
+from pyspark import pipelines as dp
 from pyspark.sql import functions as F
-from delta.tables import DeltaTable
 from pyspark.sql.types import StructType, StructField, StringType, ArrayType
-from silver.common.pipeline_state import (
-    get_latest_processed_run_id,
-    update_latest_processed_run_id,
-)
+from config import BRONZE_SCHEMA, SILVER_SCHEMA
+
+CATALOG = spark.conf.get("catalog")
+
+BRONZE_TABLE = f"{CATALOG}.{BRONZE_SCHEMA}.bronze_countries_raw"
+VALID_SNAPSHOT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_countries_snapshot_valid"
+QUARANTINE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_countries_quarantine"
+CURRENT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_countries_current"
+
+IS_INVALID_COUNTRY_CODE = F.col("country_code").isNull() | (F.col("country_code") == "")
+IS_INVALID_COUNTRY_NAME = F.col("country_name").isNull() | (F.col("country_name") == "")
+IS_INVALID_COUNTRY_ROW = IS_INVALID_COUNTRY_CODE | IS_INVALID_COUNTRY_NAME
+
+VALID_COUNTRY_CODE_EXPECTATION = "country_code IS NOT NULL AND TRIM(country_code) <> ''"
+VALID_COUNTRY_NAME_EXPECTATION = "country_name IS NOT NULL AND TRIM(country_name) <> ''"
 
 countries_array_schema = StructType([
     StructField("CountryResource", StructType([
         StructField("Countries", StructType([
-            StructField("Country", ArrayType(
-                StructType([
-                    StructField("CountryCode", StringType(), True),
-                    StructField("Names", StructType([
-                        StructField("Name", StructType([
-                            StructField("@LanguageCode", StringType(), True),
-                            StructField("$", StringType(), True),
-                        ]), True)
-                    ]), True),
-                ])
-            ), True)
+            StructField(
+                "Country",
+                ArrayType(
+                    StructType([
+                        StructField("CountryCode", StringType(), True),
+                        StructField("Names", StructType([
+                            StructField("Name", StructType([
+                                StructField("@LanguageCode", StringType(), True),
+                                StructField("$", StringType(), True),
+                            ]), True)
+                        ]), True),
+                    ])
+                ),
+                True,
+            )
         ]), True)
     ]), True)
 ])
@@ -27,7 +42,8 @@ countries_array_schema = StructType([
 countries_single_schema = StructType([
     StructField("CountryResource", StructType([
         StructField("Countries", StructType([
-            StructField("Country", StructType(
+            StructField(
+                "Country",
                 StructType([
                     StructField("CountryCode", StringType(), True),
                     StructField("Names", StructType([
@@ -36,338 +52,175 @@ countries_single_schema = StructType([
                             StructField("$", StringType(), True),
                         ]), True)
                     ]), True),
-                ])
-            ), True)
+                ]),
+                True,
+            )
         ]), True)
     ]), True)
 ])
 
-def ensure_history_table(spark, history_table: str):
-    if not spark.catalog.tableExists(history_table):
-        df = spark.createDataFrame(
-            [],
-            """
-            country_code string,
-            country_name string,
-            observed_from_ts timestamp,
-            observed_to_ts timestamp,
-            last_seen_ts timestamp,
-            is_current boolean,
-            source_ingestion_ts timestamp,
-            source_file_name string,
-            created_by_run_id string,
-            closed_by_run_id string
-            """
-        )
-        df.write.format("delta").mode("overwrite").saveAsTable(history_table)
 
-def ensure_current_table(spark, current_table: str):
-    if not spark.catalog.tableExists(current_table):
-        df = spark.createDataFrame(
-            [],
-            """
-            country_code string,
-            country_name string,
-            observed_from_ts timestamp,
-            last_seen_ts timestamp,
-            source_ingestion_ts timestamp,
-            source_file_name string,
-            created_by_run_id string
-            """
-        )
-        df.write.format("delta").mode("overwrite").saveAsTable(current_table)
-
-def ensure_quarantine_table(spark, quarantine_table: str):
-    if not spark.catalog.tableExists(quarantine_table):
-        df = spark.createDataFrame(
-            [],
-            """
-            country_code_raw string,
-            country_name_raw string,
-            validation_error string,
-            raw_json string,
-            source_ingestion_ts timestamp,
-            source_file_name string,
-            run_id string,
-            quarantined_ts timestamp
-            """
-        )
-        df.write.format("delta").mode("overwrite").saveAsTable(quarantine_table)
-
-def process_countries_run(
-    spark,
-    bronze_table: str,
-    history_table: str,
-    quarantine_table: str,
-    run_id: str,
-):
+@dp.temporary_view(name="countries_latest_run_tmp")
+def countries_latest_run_tmp():
     """
-    Loads one run of the countries bronze table and processes it to silver history.
+    Filter bronze countries data to the latest available run_id.
     """
-    bronze_df = spark.table(bronze_table).filter(F.col("run_id") == run_id)
+    bronze_df = spark.read.table(BRONZE_TABLE)
+
+    latest_run_df = bronze_df.select(F.max("run_id").alias("run_id"))
+
+    return bronze_df.join(latest_run_df, on="run_id", how="inner")
+
+
+@dp.temporary_view(name="countries_exploded_tmp")
+def countries_exploded_tmp():
+    """
+    Parse raw JSON payload and normalize it into a flat structure.
+
+    Handles both response formats from the API:
+    - array of countries
+    - single country object
+
+    Ensures a consistent array structure and explodes it so each row represents one country.
+    """
+    bronze_df = spark.read.table("countries_latest_run_tmp")
 
     parsed_array_df = bronze_df.withColumn(
         "parsed_array_json",
-        F.from_json(F.col("raw_json"), countries_array_schema)
+        F.from_json(F.col("raw_json"), countries_array_schema),
     )
 
     parsed_both_df = parsed_array_df.withColumn(
         "parsed_single_json",
-        F.from_json(F.col("raw_json"), countries_single_schema)
+        F.from_json(F.col("raw_json"), countries_single_schema),
     )
 
     normalized_df = parsed_both_df.withColumn(
         "countries_array",
         F.when(
             F.col("parsed_array_json.CountryResource.Countries.Country").isNotNull(),
-            F.col("parsed_array_json.CountryResource.Countries.Country")
+            F.col("parsed_array_json.CountryResource.Countries.Country"),
         ).otherwise(
             F.array(F.col("parsed_single_json.CountryResource.Countries.Country"))
-        )
+        ),
     )
 
     exploded_df = normalized_df.withColumn(
         "country",
-        F.explode_outer(F.col("countries_array"))
+        F.explode_outer(F.col("countries_array")),
     )
+
+    return exploded_df
+
+
+@dp.temporary_view(name="countries_staged_tmp")
+def countries_staged_tmp():
+    """
+    Select and clean business-relevant fields from exploded country data.
+    This view represents the final staged dataset before validation and further processing.
+    """
+    exploded_df = spark.read.table("countries_exploded_tmp")
 
     staged_df = (
         exploded_df
         .select(
             F.col("country.CountryCode").alias("country_code_raw"),
             F.col("country.Names.Name.$").alias("country_name_raw"),
-            F.col("raw_json"),
-            F.col("run_id"),
-            F.col("_source_file_name"),
-            F.col("_source_file_modification_time"),
-            F.col("_ingested_at"),
+            "raw_json",
+            "run_id",
+            F.col("_source_file_modification_time").alias("source_file_modification_ts"),
+            F.col("_source_file_path").alias("source_file_path"),
         )
         .withColumn("country_code", F.upper(F.trim(F.col("country_code_raw"))))
         .withColumn("country_name", F.trim(F.col("country_name_raw")))
-        .withColumn(
-            "observed_ts",
-            F.coalesce(F.col("_source_file_modification_time"), F.col("_ingested_at"))
-        )
     )
 
-    invalid_df = staged_df.filter(
-        F.col("country_code").isNull() | (F.col("country_code") == "") |
-        F.col("country_name").isNull() | (F.col("country_name") == "")
-    )
+    return staged_df
 
-    valid_df = (
-        staged_df
-        .filter(
-            F.col("country_code").isNotNull() & (F.col("country_code") != "") &
-            F.col("country_name").isNotNull() & (F.col("country_name") != "")
-        )
-        .dropDuplicates(["country_code"])
-    )
+
+@dp.materialized_view(
+    name=QUARANTINE_TABLE,
+    comment="Invalid country rows from the latest countries snapshot."
+)
+def silver_countries_quarantine():
+    """
+    Expose invalid country rows from the latest snapshot for investigation.
+    """
+    staged_df = spark.read.table("countries_staged_tmp")
+
+    invalid_df = staged_df.filter(IS_INVALID_COUNTRY_ROW)
 
     quarantine_df = (
         invalid_df
         .withColumn(
             "validation_error",
             F.when(
-                F.col("country_code").isNull() | (F.col("country_code") == ""),
-                F.lit("country_code missing or invalid")
-            ).otherwise(F.lit("country_name missing or invalid"))
+                IS_INVALID_COUNTRY_CODE,
+                F.lit("country_code missing or invalid"),
+            ).otherwise(
+                F.lit("country_name missing or invalid")
+            ),
         )
+        .withColumn("quarantined_ts", F.current_timestamp())
         .select(
             "country_code_raw",
             "country_name_raw",
             "validation_error",
             "raw_json",
-            F.col("_ingested_at").alias("source_ingestion_ts"),
-            F.col("_source_file_name").alias("source_file_name"),
+            "source_file_path",
+            "source_file_modification_ts",
             "run_id",
-            F.current_timestamp().alias("quarantined_ts"),
+            "quarantined_ts",
         )
     )
 
-    if quarantine_df.take(1):
-        quarantine_df.write.format("delta").mode("append").saveAsTable(quarantine_table)
+    return quarantine_df
 
-    current_df = spark.table(history_table).filter(F.col("is_current") == True)
 
-    compare_df = (
-        valid_df.alias("src")
-        .join(current_df.alias("cur"), on="country_code", how="left")
-        .select(
-            F.col("src.country_code"),
-            F.col("src.country_name").alias("new_country_name"),
-            F.col("src.observed_ts"),
-            F.col("src._ingested_at").alias("source_ingestion_ts"),
-            F.col("src._source_file_name").alias("source_file_name"),
-            F.col("src.run_id").alias("ingestion_run_id"),
-            F.col("cur.country_name").alias("current_country_name"),
-        )
-    )
+@dp.materialized_view(
+    name=VALID_SNAPSHOT_TABLE,
+    private=True,
+    comment="Latest valid countries snapshot prepared for snapshot-based AUTO CDC."
+)
+@dp.expect_all_or_drop({
+    "valid_country_code": VALID_COUNTRY_CODE_EXPECTATION,
+    "valid_country_name": VALID_COUNTRY_NAME_EXPECTATION,
+})
+def silver_countries_snapshot_valid():
+    """
+    Prepare the latest valid countries snapshot for downstream processing.
 
-    new_df = compare_df.filter(F.col("current_country_name").isNull())
+    - Filters out invalid records using expectations
+    - Selects relevant business and metadata columns
+    - Deduplicates by country_code to ensure one record per key
 
-    unchanged_df = compare_df.filter(
-        F.col("current_country_name").isNotNull() &
-        F.col("new_country_name").eqNullSafe(F.col("current_country_name"))
-    )
+    This dataset serves as the clean input snapshot for AUTO CDC (SCD Type 1).
+    """
+    staged_df = spark.read.table("countries_staged_tmp")
 
-    changed_df = compare_df.filter(
-        F.col("current_country_name").isNotNull() &
-        ~F.col("new_country_name").eqNullSafe(F.col("current_country_name"))
-    )
-
-    history_dt = DeltaTable.forName(spark, history_table)
-
-    unchanged_updates_df = unchanged_df.select(
+    valid_df = staged_df.select(
         "country_code",
-        F.col("observed_ts").alias("new_last_seen_ts"),
-    )
+        "country_name",
+        "source_file_path",
+        "source_file_modification_ts",
+        "run_id",
+    ).dropDuplicates(["country_code"])
 
-    if unchanged_updates_df.take(1):
-        (
-            history_dt.alias("t")
-            .merge(
-                unchanged_updates_df.alias("s"),
-                "t.country_code = s.country_code AND t.is_current = true"
-            )
-            .whenMatchedUpdate(set={
-                "last_seen_ts": "s.new_last_seen_ts"
-            })
-            .execute()
-        )
-
-    changed_closures_df = changed_df.select(
-        "country_code",
-        F.col("observed_ts").alias("new_observed_to_ts"),
-        F.col("ingestion_run_id").alias("new_closed_by_run_id"),
-    )
-
-    if changed_closures_df.take(1):
-        (
-            history_dt.alias("t")
-            .merge(
-                changed_closures_df.alias("s"),
-                "t.country_code = s.country_code AND t.is_current = true"
-            )
-            .whenMatchedUpdate(set={
-                "observed_to_ts": "s.new_observed_to_ts",
-                "is_current": "false",
-                "closed_by_run_id": "s.new_closed_by_run_id",
-            })
-            .execute()
-        )
-
-    inserts_df = (
-        new_df.select(
-            F.col("country_code"),
-            F.col("new_country_name").alias("country_name"),
-            F.col("observed_ts").alias("observed_from_ts"),
-            F.lit(None).cast("timestamp").alias("observed_to_ts"),
-            F.col("observed_ts").alias("last_seen_ts"),
-            F.lit(True).alias("is_current"),
-            "source_ingestion_ts",
-            "source_file_name",
-            F.col("ingestion_run_id").alias("created_by_run_id"),
-            F.lit(None).cast("string").alias("closed_by_run_id"),
-        )
-        .unionByName(
-            changed_df.select(
-                F.col("country_code"),
-                F.col("new_country_name").alias("country_name"),
-                F.col("observed_ts").alias("observed_from_ts"),
-                F.lit(None).cast("timestamp").alias("observed_to_ts"),
-                F.col("observed_ts").alias("last_seen_ts"),
-                F.lit(True).alias("is_current"),
-                "source_ingestion_ts",
-                "source_file_name",
-                F.col("ingestion_run_id").alias("created_by_run_id"),
-                F.lit(None).cast("string").alias("closed_by_run_id"),
-            )
-        )
-    )
-
-    if inserts_df.take(1):
-        inserts_df.write.format("delta").mode("append").saveAsTable(history_table)
-
-def refresh_countries_current(
-    spark,
-    history_table: str,
-    current_table: str,
-):
-    """
-    Rebuild the current table from the current rows in history.
-    """
-
-    current_df = (
-        spark.table(history_table)
-        .filter(F.col("is_current") == True)
-        .select(
-            "country_code",
-            "country_name",
-            "observed_from_ts",
-            "last_seen_ts",
-            "source_ingestion_ts",
-            "source_file_name",
-            "created_by_run_id",
-        )
-    )
-
-    current_df.write.format("delta").mode("overwrite").saveAsTable(current_table)
+    return valid_df
 
 
-def load_countries_to_silver(
-    spark,
-    bronze_table: str,
-    history_table: str,
-    current_table: str,
-    quarantine_table: str,
-    state_table: str,
-):
-    """
-    Orchestrate the full Bronze-to-Silver countries load.
-    """
-    entity_name = "countries_history"
+dp.create_streaming_table(
+    name=CURRENT_TABLE,
+    comment="SCD Type 1 current countries table for Lufthansa reference data."
+)
 
-    ensure_history_table(spark, history_table)
-    ensure_current_table(spark, current_table)
-    ensure_quarantine_table(spark, quarantine_table)
+dp.create_auto_cdc_from_snapshot_flow(
+    target=CURRENT_TABLE,
+    source=VALID_SNAPSHOT_TABLE,
+    keys=["country_code"],
+    stored_as_scd_type=1,
+)
 
-    latest_processed_run_id = get_latest_processed_run_id(
-        spark,
-        state_table,
-        entity_name,
-    )
 
-    bronze_runs_df = spark.table(bronze_table).select("run_id").distinct()
 
-    if latest_processed_run_id is not None:
-        bronze_runs_df = bronze_runs_df.filter(
-            F.col("run_id") > latest_processed_run_id
-        )
 
-    run_ids = [
-        row["run_id"]
-        for row in bronze_runs_df.orderBy("run_id").collect()
-    ]
-
-    for run_id in run_ids:
-        process_countries_run(
-            spark=spark,
-            bronze_table=bronze_table,
-            history_table=history_table,
-            quarantine_table=quarantine_table,
-            run_id=run_id,
-        )
-
-        update_latest_processed_run_id(
-            spark=spark,
-            state_table=state_table,
-            entity_name=entity_name,
-            latest_run_id=run_id,
-        )
-
-    refresh_countries_current(
-        spark=spark,
-        history_table=history_table,
-        current_table=current_table,
-    )
