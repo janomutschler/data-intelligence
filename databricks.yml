@@ -12,10 +12,6 @@ sync:
 variables:
   catalog:
     default: "workspace"
-  schema:
-    default: "data_intelligence_dev"
-  volume:
-    default: "raw_lh_data"
 
 targets:
   dev:
@@ -24,7 +20,7 @@ targets:
     workspace:
       host: https://dbc-1189a44d-7664.cloud.databricks.com/
     variables:
-      schema: "data_intelligence_dev"
+      catalog: "data_intelligence_dev"
 
   prod:
     mode: production
@@ -36,4 +32,4 @@ targets:
       host: https://dbc-1189a44d-7664.cloud.databricks.com/
       root_path: /Workspace/Users/jmutschl42@gmail.com/.bundle/${bundle.name}/${bundle.target}
     variables:
-      schema: "data_intelligence_prod"
+      catalog: "data_intelligence_prod"

@@ -3,28 +3,36 @@ resources:
     bronze_raw_reference_ingestion_pipeline:
       name: bronze_raw_reference_ingestion_pipeline-${bundle.target}
       catalog: ${var.catalog}
-      target: ${var.schema}
+      target: default
       serverless: true
       continuous: false
       configuration:
         catalog: ${var.catalog}
-        schema: ${var.schema}
-        volume: ${var.volume}
       libraries:
         - file:
-            path: ../../src/transformation/bronze_reference_pipeline.py
+            path: ../../src/transformation/bronze/bronze_reference_pipeline.py
+        - file:
+            path: ../../src/transformation/silver/reference/countries.py
+        - file:
+            path: ../../src/transformation/silver/reference/aircraft.py
+        - file:
+            path: ../../src/transformation/silver/reference/airlines.py
+        - file:
+            path: ../../src/transformation/silver/reference/airports.py
+        - file:
+            path: ../../src/transformation/silver/reference/cities.py
 
     bronze_raw_operational_ingestion_pipeline:
       name: bronze_raw_operational_ingestion_pipeline-${bundle.target}
       catalog: ${var.catalog}
-      target: ${var.schema}
+      target: default
       serverless: true
       continuous: false
       configuration:
         catalog: ${var.catalog}
-        schema: ${var.schema}
-        volume: ${var.volume}
       libraries:
         - file:
-            path: ../../src/transformation/bronze_operational_pipeline.py
+            path: ../../src/transformation/bronze/bronze_operational_pipeline.py
+        - file:
+            path: ../../src/transformation/silver/operational/flight_status.py
           
