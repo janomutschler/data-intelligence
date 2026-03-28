@@ -1,10 +1,8 @@
 from pyspark import pipelines as dp
 from pyspark.sql.functions import col, current_timestamp
+from config import RAW_DATA_SCHEMA, RAW_DATA_VOLUME, BRONZE_SCHEMA
 
 CATALOG = spark.conf.get("catalog")
-BRONZE_SCHEMA = "bronze"
-RAW_DATA_SCHEMA = "raw_data"
-RAW_DATA_VOLUME = "raw_lh_data"
 
 
 def raw_table_df(source_subpath: str):
