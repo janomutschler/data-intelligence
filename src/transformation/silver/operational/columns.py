@@ -1,3 +1,5 @@
+from pyspark.sql import functions as F
+
 BASE_METADATA_COLUMNS = [
     "raw_json",
     "direction",
@@ -53,9 +55,10 @@ BASE_FLIGHT_COLUMNS = [
     F.col("flight.ServiceType").alias("service_type"),
 ]
 
-STAGED_FLIGHT_COLUMNS = [
+
+BASE_STAGED_COLUMNS = [
     # Keys
-    "flight_instance_key",
+    "flight_instance_hash_key",
     "flight_date",
 
     # Airlines
@@ -108,82 +111,22 @@ STAGED_FLIGHT_COLUMNS = [
     "is_landed",
     "is_cancelled",
 
-    # Request metadata (business context)
+    # Request metadata
     "requested_direction",
     "requested_airport",
     "requested_date",
     "requested_window_start",
 
-    # CDC / sequencing
+    # CDC
     "sequence_ts",
-    "record_hash",
 ]
 
-CDC_SOURCE_COLUMNS = [
-    # Keys
-    "flight_instance_key",
-    "flight_date",
 
-    # Airlines
-    "operating_airline_id",
-    "operating_flight_number",
-    "marketing_airline_id",
-    "marketing_flight_number",
+STAGED_FLIGHT_COLUMNS = BASE_STAGED_COLUMNS
 
-    # Airports
-    "departure_airport_code",
-    "arrival_airport_code",
 
-    # Departure times
-    "scheduled_departure_local_ts",
-    "scheduled_departure_utc_ts",
-    "actual_departure_local_ts",
-    "actual_departure_utc_ts",
-
-    # Arrival times
-    "scheduled_arrival_local_ts",
-    "scheduled_arrival_utc_ts",
-    "actual_arrival_local_ts",
-    "actual_arrival_utc_ts",
-
-    # Departure status
-    "departure_time_status_code",
-    "departure_time_status_definition",
-    "departure_terminal_name",
-    "departure_gate",
-
-    # Arrival status
-    "arrival_time_status_code",
-    "arrival_time_status_definition",
-
-    # Aircraft
-    "aircraft_code",
-    "aircraft_registration",
-
-    # Flight status
-    "flight_status_code",
-    "flight_status_definition",
-    "service_type",
-
-    # Metrics
-    "departure_delay_minutes",
-    "arrival_delay_minutes",
-
-    # Flags
-    "has_missing_status",
-    "is_landed",
-    "is_cancelled",
-
-    # Request context
-    "requested_direction",
-    "requested_airport",
-    "requested_date",
-    "requested_window_start",
-
-    # Lineage / sequencing
+CDC_SOURCE_COLUMNS = BASE_STAGED_COLUMNS + [
     "run_id",
     "_source_file_path",
     "_source_file_modification_time",
-    "sequence_ts",
-    "record_hash",
 ]
