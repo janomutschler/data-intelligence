@@ -5,7 +5,7 @@ from pyspark.sql.types import (
     StringType,
     IntegerType,
 )
-from config.settings import CATALOG, SCHEMA
+from config import CATALOG, SCHEMA
 
 
 FLIGHT_STATUS_LOG_TABLE = f"{CATALOG}.{SCHEMA}.ingestion_log_flight_status"
@@ -54,25 +54,6 @@ reference_data_log_schema = StructType([
     StructField("params_json", StringType(), True),
 ])
 
-
-schedules_log_schema = StructType([
-    StructField("log_date", StringType(), True),
-    StructField("run_id", StringType(), True),
-    StructField("timestamp_utc", StringType(), True),
-    StructField("status", StringType(), True),
-    StructField("http_status", IntegerType(), True),
-    StructField("attempt", IntegerType(), True),
-    StructField("url", StringType(), True),
-    StructField("response_text", StringType(), True),
-    StructField("exception", StringType(), True),
-    StructField("airline", StringType(), True),
-    StructField("schedule_date", StringType(), True),
-    StructField("page", IntegerType(), True),
-    StructField("offset", IntegerType(), True),
-    StructField("file_path", StringType(), True),
-    StructField("records_total", IntegerType(), True),
-    StructField("params_json", StringType(), True),
-])
 
 def create_flight_status_log_table(spark) -> None:
     spark.sql(f"""
@@ -126,30 +107,6 @@ def create_reference_data_log_table(spark) -> None:
     """)
 
 
-def create_schedules_log_table(spark) -> None:
-    spark.sql(f"""
-    CREATE TABLE IF NOT EXISTS {SCHEDULES_LOG_TABLE} (
-        log_date STRING,
-        run_id STRING,
-        timestamp_utc STRING,
-        status STRING,
-        http_status INT,
-        attempt INT,
-        url STRING,
-        response_text STRING,
-        exception STRING,
-        airline STRING,
-        schedule_date STRING,
-        page INT,
-        offset INT,
-        file_path STRING,
-        records_total INT,
-        params_json STRING
-    )
-    USING DELTA
-    PARTITIONED BY (log_date)
-    """)
-
 
 def _append_log(spark, table_name: str, schema: StructType, run_id: str, record: dict) -> None:
     """
@@ -173,6 +130,3 @@ def append_flight_status_log(spark, run_id: str, record: dict) -> None:
 def append_reference_data_log(spark, run_id: str, record: dict) -> None:
     _append_log(spark, REFERENCE_DATA_LOG_TABLE, reference_data_log_schema, run_id, record)
 
-
-def append_schedules_log(spark, run_id: str, record: dict) -> None:
-    _append_log(spark, SCHEDULES_LOG_TABLE, schedules_log_schema, run_id, record)

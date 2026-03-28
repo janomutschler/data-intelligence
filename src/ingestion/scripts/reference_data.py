@@ -6,53 +6,24 @@ import json
 import time
 from functools import partial
 
-from config.settings import (
+from config import (
     BASE_URL,
     SLEEP_SECONDS,
+    REFERENCE_CONFIG,
 )
 
-from support.api_client import request_with_retry
-from support.utils import utc_now_str
-from support.paths import reference_data_directory
-from support.storage import mkdirs, write_json
-from support.logging import (
+from common.api_client import request_with_retry
+from common.utils import utc_now_str
+from common.paths import reference_data_directory
+from common.storage import mkdirs, write_json
+from common.logging import (
     create_reference_data_log_table,
     append_reference_data_log,
 )
 
-LIMIT = 100
+REFERENCE_TYPES = list(REFERENCE_CONFIG.keys())
 
-REFERENCE_CONFIG = {
-    "countries": {
-        "resource_name": "CountryResource",
-        "params": {
-            "lang": "en",
-        },
-    },
-    "aircraft": {
-        "resource_name": "AircraftResource",
-        "params": {},
-    },
-    "airlines": {
-        "resource_name": "AirlineResource",
-        "params": {
-            "lang": "en",
-        },
-    },
-    "airports": {
-        "resource_name": "AirportResource",
-        "params": {
-            "lang": "en",
-            "LHoperated": "1",
-        },
-    },
-    "cities": {
-        "resource_name": "CityResource",
-        "params": {
-            "lang": "en",
-        },
-    },
-}
+LIMIT = 100
 
 
 def fetch_reference_pages(
@@ -73,6 +44,13 @@ def fetch_reference_pages(
     reference_type_config = REFERENCE_CONFIG[reference_type]
     resource_name = reference_type_config["resource_name"]
 
+    directory = reference_data_directory(
+        reference_type=reference_type,
+        reference_date=reference_date,
+        run_id=ctx.run_id,
+    )
+    mkdirs(directory, ctx.dbutils)
+
     while True:
         url = f"{BASE_URL}/v1/references/{reference_type}"
         params = {
@@ -81,13 +59,7 @@ def fetch_reference_pages(
             **reference_type_config["params"],
         }
 
-        directory = reference_data_directory(
-            reference_type=reference_type,
-            reference_date=reference_date,
-            run_id=ctx.run_id,
-        )
         file_path = f"{directory}/page={page}.json"
-        mkdirs(directory, ctx.dbutils)
 
         context = {
             "timestamp_utc": utc_now_str(),
@@ -189,55 +161,22 @@ def fetch_reference_pages(
     return successful_pages
 
 
-def fetch_countries(ctx) -> int:
-    return fetch_reference_pages(ctx, "countries")
-
-
-def fetch_aircraft(ctx) -> int:
-    return fetch_reference_pages(ctx, "aircraft")
-
-def fetch_airlines(ctx) -> int:
-    return fetch_reference_pages(ctx, "airlines")
-
-
-def fetch_airports(ctx) -> int:
-    return fetch_reference_pages(ctx, "airports")
-
-
-def fetch_cities(ctx) -> int:
-    return fetch_reference_pages(ctx, "cities")
-
-def run_reference_data_ingestion_small(ctx) -> int:
+def run_reference_ingestion(ctx) -> int:
     """
-    Smaller monthly reference datasets together.
+    Run ingestion for all reference datasets.
+
+    Returns the total number of successfully saved pages.
     """
     total_pages = 0
-    total_pages += fetch_countries(ctx)
-    total_pages += fetch_aircraft(ctx)
-    total_pages += fetch_airlines(ctx)
-    total_pages += fetch_airports(ctx)
 
-    print(f"Total reference pages fetched (small): {total_pages}")
+    for reference_type in REFERENCE_TYPES:
+        print(f"Starting ingestion for: {reference_type}")
+        total_pages += fetch_reference_pages(ctx, reference_type)
+
+    print(f"Total reference pages fetched: {total_pages}")
     return total_pages
 
-def run_reference_data_ingestion_cities(ctx) -> int:
-    """
-    Cities kept separate because of larger request volume.
-    """
-    total_pages = fetch_cities(ctx)
-    print(f"Total reference pages fetched (cities): {total_pages}")
-    return total_pages
-
-
-def run_reference_data_ingestion_all(ctx) -> int:
-    total_pages = 0
-    total_pages += run_reference_data_ingestion_small(ctx)
-    total_pages += run_reference_data_ingestion_cities(ctx)
-
-    print(f"Total reference pages fetched (all): {total_pages}")
-    return total_pages
-
-def init_reference_data_ingestion(spark) -> str:
+def init_reference_ingestion(spark) -> str:
     """
     Ensure required log table exists and return run_id for this execution.
     """

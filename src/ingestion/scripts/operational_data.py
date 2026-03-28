@@ -1,29 +1,29 @@
 """
-Handles ingestion of operational data from Lufthansa API
-and stores raw JSON into Unity Catalog volumes.
+Handles ingestion of operational flight-status data from the Lufthansa API
+and stores raw JSON files in Unity Catalog volumes.
 """
 import json
 import time
 from functools import partial
 
-from config.settings import (
+from config import (
     BASE_URL,
     AIRPORTS,
     SLEEP_SECONDS,
+    DEPARTURE_WINDOW_OFFSET_HOURS,
+    ARRIVAL_WINDOW_OFFSET_HOURS,
 )
-
-from support.api_client import request_with_retry
-from support.utils import utc_now_str, get_target_window_start
-from support.paths import flight_status_directory
-from support.storage import mkdirs, write_json
-from support.logging import (
+from common.api_client import request_with_retry
+from common.utils import utc_now_str, get_target_window_start
+from common.paths import flight_status_directory
+from common.storage import mkdirs, write_json
+from common.logging import (
     append_flight_status_log,
-    append_schedules_log,
     create_flight_status_log_table,
-    create_schedules_log_table,
 )
 
 LIMIT = 50
+
 
 def fetch_airport_window(
     ctx,
@@ -31,14 +31,14 @@ def fetch_airport_window(
     target_date: str,
     window_start: str,
     direction: str,
-    schedules: bool = False,
 ) -> int:
     """
     Fetch all paginated flight-status pages for one airport, one direction,
-    and one time window. Returns the number of successfully saved pages.
+    and one 4-hour window.
+
+    Returns the number of successfully saved pages.
     """
-    append_log = append_schedules_log if schedules else append_flight_status_log
-    log_func = partial(append_log, ctx.spark, ctx.run_id)
+    log_func = partial(append_flight_status_log, ctx.spark, ctx.run_id)
 
     offset = 0
     page = 0
@@ -46,10 +46,7 @@ def fetch_airport_window(
 
     while True:
         url = f"{BASE_URL}/v1/operations/flightstatus/{direction}/{airport}/{window_start}"
-        params = {
-            "limit": LIMIT,
-            "offset": offset,
-        }
+        params = {"limit": LIMIT, "offset": offset}
 
         directory = flight_status_directory(
             direction=direction,
@@ -57,7 +54,6 @@ def fetch_airport_window(
             flight_date=target_date,
             window_start=window_start,
             run_id=ctx.run_id,
-            schedules=schedules,
         )
         file_path = f"{directory}/page={page}.json"
         mkdirs(directory, ctx.dbutils)
@@ -150,7 +146,7 @@ def fetch_airport_window(
 
         print(f"Saved: {file_path}")
         print(f"Total flights: {total_count}")
-
+        
         successful_pages += 1
 
         if offset + LIMIT >= total_count:
@@ -168,16 +164,18 @@ def fetch_all_airports_for_window(
     ctx,
     direction: str,
     delay_hours: int,
-    schedules: bool = False,
 ) -> int:
     """
-    Fetch one flight-status window across all configured airports.
-    Returns total successful pages fetched.
+    Fetch one 4-hour flight-status window across all configured airports.
+
+    Returns the total number of successfully saved pages.
     """
-    window_start = get_target_window_start(delay_hours, schedules)
+    window_start = get_target_window_start(delay_hours)
+
     if window_start.endswith("T00:00"):
         print(f"Skipping midnight window: {window_start}")
         return 0
+
     target_date = window_start[:10]
     total_pages = 0
 
@@ -188,26 +186,49 @@ def fetch_all_airports_for_window(
     print(f"  window_start = {window_start}")
 
     for airport in AIRPORTS:
-        pages = fetch_airport_window(
+        total_pages += fetch_airport_window(
             ctx=ctx,
             airport=airport,
             target_date=target_date,
             window_start=window_start,
             direction=direction,
-            schedules=schedules
         )
-        total_pages += pages
         time.sleep(SLEEP_SECONDS)
 
     print(f"Finished ingestion. Total pages fetched: {total_pages}")
     return total_pages
 
+
 def init_operational_ingestion(spark) -> str:
     """
-    Ensure required log table exists and return run_id for this execution.
+    Ensure required log table exists and return the run_id for this execution.
     """
-    create_schedules_log_table(spark)
     create_flight_status_log_table(spark)
-    run_id = utc_now_str()
+    return utc_now_str()
 
-    return run_id
+
+def run_flight_status_ingestion(ctx) -> int:
+    """
+    Run flight-status ingestion for configured departure and arrival windows.
+
+    Returns the total number of successfully saved pages.
+    """
+    total_pages_departures = 0
+    for hour in DEPARTURE_WINDOW_OFFSET_HOURS:
+        total_pages_departures += fetch_all_airports_for_window(
+            ctx=ctx,
+            direction="departures",
+            delay_hours=hour,
+        )
+
+    total_pages_arrivals = 0
+    for hour in ARRIVAL_WINDOW_OFFSET_HOURS:
+        total_pages_arrivals += fetch_all_airports_for_window(
+            ctx=ctx,
+            direction="arrivals",
+            delay_hours=hour,
+        )
+
+    total_pages = total_pages_departures + total_pages_arrivals
+    print(f"Total pages fetched: {total_pages}")
+    return total_pages

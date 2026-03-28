@@ -1,4 +1,4 @@
-from config.settings import CATALOG, SCHEMA, VOLUME
+from config import CATALOG, SCHEMA, VOLUME
 
 RAW_BASE_PATH = f"/Volumes/{CATALOG}/{SCHEMA}/{VOLUME}"
 

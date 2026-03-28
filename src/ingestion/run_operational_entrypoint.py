@@ -1,7 +1,6 @@
-from support.api_client import create_session
-from support.context import IngestionContext
-from scripts.schedules import run_schedules_ingestion
-from scripts.flight_status import run_flight_status_ingestion
+from common.api_client import create_session
+from common .context import IngestionContext
+from scripts.operational_data import run_flight_status_ingestion
 from scripts.operational_data import init_operational_ingestion
 
 def main():
