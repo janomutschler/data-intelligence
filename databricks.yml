@@ -7,7 +7,7 @@ include:
 
 sync:
   include:
-    - src/**
+    - src
 
 variables:
   catalog:

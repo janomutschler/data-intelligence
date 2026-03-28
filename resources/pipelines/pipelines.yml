@@ -6,6 +6,7 @@ resources:
       target: default
       serverless: true
       continuous: false
+      root_path: "../../src/transformation"
       configuration:
         catalog: ${var.catalog}
       libraries:
@@ -28,6 +29,7 @@ resources:
       target: default
       serverless: true
       continuous: false
+      root_path: "../../src/transformation"
       configuration:
         catalog: ${var.catalog}
       libraries:
