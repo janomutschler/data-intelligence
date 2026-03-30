@@ -38,5 +38,8 @@ resources:
         - file:
             path: ../../src/transformation/silver/operational/flight_status.py
         - file:
-            path: ../../src/transformation/gold/departure_airport_hourly.py
-          
+            path: ../../src/transformation/gold/departure_airport_hourly_performance.py
+        - file:
+            path: ../../src/transformation/gold/departure_airport_distance_category_daily_performance.py
+        - file:
+            path: ../../src/transformation/gold/route_daily_performance.py

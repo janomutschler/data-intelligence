@@ -13,7 +13,7 @@ resources:
       schedule:
         quartz_cron_expression: 45 5 0/4 * * ?
         timezone_id: UTC
-        pause_status: UNPAUSED
+        pause_status: PAUSED
 
       tasks:
         - task_key: run_operational_entrypoint_py
@@ -24,7 +24,7 @@ resources:
               - ${var.catalog_name}
           environment_key: Default
 
-        - task_key: run_bronze_operational_pipeline
+        - task_key: run_operational_medallion_pipeline
           depends_on:
             - task_key: run_operational_entrypoint_py
           pipeline_task:
