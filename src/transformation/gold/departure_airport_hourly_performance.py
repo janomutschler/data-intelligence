@@ -24,10 +24,17 @@ GOLD_EXPECTATIONS = {
 def gold_departure_airport_hourly():
     silver_df = spark.read.table(SILVER_TABLE)
 
+    is_cancelled = F.coalesce(F.col("is_cancelled"), F.lit(False))
+    is_diverted = F.coalesce(F.col("is_diverted"), F.lit(False))
+    is_rerouted = F.coalesce(F.col("is_rerouted"), F.lit(False))
+    is_route_disrupted = is_diverted | is_rerouted
+    is_operated = ~is_cancelled
+    is_operated_as_planned = is_operated & ~is_route_disrupted
+
     relevant_flights_df = silver_df.filter(
         F.col("actual_departure_utc_ts").isNotNull()
         | F.col("actual_arrival_utc_ts").isNotNull()
-        | F.col("is_cancelled")
+        | is_cancelled
     )
 
     enriched_df = relevant_flights_df.withColumn(
@@ -35,14 +42,14 @@ def gold_departure_airport_hourly():
         F.hour("scheduled_departure_local_ts")
     )
 
-    is_operated = ~F.col("is_cancelled")
     departure_on_time = (
-        is_operated
+        is_operated_as_planned
         & F.col("departure_delay_minutes").isNotNull()
         & (F.col("departure_delay_minutes") <= 15)
     )
+
     arrival_on_time = (
-        is_operated
+        is_operated_as_planned
         & F.col("arrival_delay_minutes").isNotNull()
         & (F.col("arrival_delay_minutes") <= 15)
     )
@@ -56,13 +63,14 @@ def gold_departure_airport_hourly():
         )
         .agg(
             F.count("*").alias("total_flights"),
-            F.sum(F.col("is_cancelled").cast("int")).alias("cancelled_flights"),
+            F.sum(is_cancelled.cast("int")).alias("cancelled_flights"),
+            F.sum(is_route_disrupted.cast("int")).alias("route_disrupted_flights"),
             F.coalesce(
-                F.avg(F.when(is_operated, F.col("departure_delay_minutes"))),
+                F.avg(F.when(is_operated_as_planned, F.col("departure_delay_minutes"))),
                 F.lit(0.0),
             ).alias("avg_departure_delay_minutes"),
             F.coalesce(
-                F.avg(F.when(is_operated, F.col("arrival_delay_minutes"))),
+                F.avg(F.when(is_operated_as_planned, F.col("arrival_delay_minutes"))),
                 F.lit(0.0),
             ).alias("avg_arrival_delay_minutes"),
             F.sum(F.when(departure_on_time, 1).otherwise(0)).alias("on_time_departures"),
@@ -77,17 +85,21 @@ def gold_departure_airport_hourly():
             F.col("total_flights") - F.col("cancelled_flights")
         )
         .withColumn(
+            "operated_as_planned_flights",
+            F.col("operated_flights") - F.col("route_disrupted_flights")
+        )
+        .withColumn(
             "departure_otp_15_pct",
             F.when(
-                F.col("operated_flights") > 0,
-                F.col("on_time_departures") / F.col("operated_flights"),
+                F.col("operated_as_planned_flights") > 0,
+                F.col("on_time_departures") / F.col("operated_as_planned_flights"),
             ).otherwise(F.lit(0.0))
         )
         .withColumn(
             "arrival_otp_15_pct",
             F.when(
-                F.col("operated_flights") > 0,
-                F.col("on_time_arrivals") / F.col("operated_flights"),
+                F.col("operated_as_planned_flights") > 0,
+                F.col("on_time_arrivals") / F.col("operated_as_planned_flights"),
             ).otherwise(F.lit(0.0))
         )
     )
