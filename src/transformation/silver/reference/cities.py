@@ -5,10 +5,10 @@ from config import BRONZE_SCHEMA, SILVER_SCHEMA
 
 CATALOG = spark.conf.get("catalog")
 
-BRONZE_TABLE = f"{CATALOG}.{BRONZE_SCHEMA}.bronze_cities_raw"
-VALID_SNAPSHOT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_cities_snapshot_valid"
-QUARANTINE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_cities_quarantine"
-CURRENT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_cities_current"
+BRONZE_TABLE = f"{CATALOG}.{BRONZE_SCHEMA}.cities_raw"
+VALID_SNAPSHOT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.cities_snapshot_valid"
+QUARANTINE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.cities_quarantine"
+CURRENT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.cities_current"
 
 IS_INVALID_CITY_CODE = F.col("city_code").isNull() | (F.col("city_code") == "")
 IS_INVALID_COUNTRY_CODE = F.col("country_code").isNull() | (F.col("country_code") == "")

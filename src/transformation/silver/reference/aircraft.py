@@ -5,10 +5,10 @@ from config import BRONZE_SCHEMA, SILVER_SCHEMA
 
 CATALOG = spark.conf.get("catalog")
 
-BRONZE_TABLE = f"{CATALOG}.{BRONZE_SCHEMA}.bronze_aircraft_raw"
-VALID_SNAPSHOT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_aircraft_snapshot_valid"
-QUARANTINE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_aircraft_quarantine"
-CURRENT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_aircraft_current"
+BRONZE_TABLE = f"{CATALOG}.{BRONZE_SCHEMA}.aircraft_raw"
+VALID_SNAPSHOT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.aircraft_snapshot_valid"
+QUARANTINE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.aircraft_quarantine"
+CURRENT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.aircraft_current"
 
 IS_INVALID_AIRCRAFT_CODE = F.col("aircraft_code").isNull() | (F.col("aircraft_code") == "")
 IS_INVALID_AIRCRAFT_NAME = F.col("aircraft_name").isNull() | (F.col("aircraft_name") == "")

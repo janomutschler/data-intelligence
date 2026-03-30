@@ -5,10 +5,10 @@ from config import BRONZE_SCHEMA, SILVER_SCHEMA
 
 CATALOG = spark.conf.get("catalog")
 
-BRONZE_TABLE = f"{CATALOG}.{BRONZE_SCHEMA}.bronze_airlines_raw"
-VALID_SNAPSHOT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_airlines_snapshot_valid"
-QUARANTINE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_airlines_quarantine"
-CURRENT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_airlines_current"
+BRONZE_TABLE = f"{CATALOG}.{BRONZE_SCHEMA}.airlines_raw"
+VALID_SNAPSHOT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.airlines_snapshot_valid"
+QUARANTINE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.airlines_quarantine"
+CURRENT_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.airlines_current"
 
 IS_INVALID_AIRLINE_ID = F.col("airline_id").isNull() | (F.col("airline_id") == "")
 IS_INVALID_AIRLINE_NAME = F.col("airline_name").isNull() | (F.col("airline_name") == "")
