@@ -110,6 +110,8 @@ BASE_STAGED_COLUMNS = [
     "has_missing_status",
     "is_landed",
     "is_cancelled",
+	"is_diverted",
+	"is_rerouted",
 
     # Request metadata
     "requested_direction",

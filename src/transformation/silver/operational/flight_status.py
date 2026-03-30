@@ -146,6 +146,14 @@ def flight_status_enriched_tmp():
             "is_cancelled",
             F.coalesce(F.col("flight_status_code") == F.lit("CD"), F.lit(False)),
         )
+        .withColumn(
+            "is_diverted",
+            F.coalesce(F.col("flight_status_code") == F.lit("DV"), F.lit(False)),
+        )
+        .withColumn(
+            "is_rerouted",
+            F.coalesce(F.col("flight_status_code") == F.lit("RT"), F.lit(False)),
+        )
     )
 
     request_context_df = (
