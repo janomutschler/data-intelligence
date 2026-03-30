@@ -26,11 +26,11 @@ from silver.operational.expectations import (
 CATALOG = spark.conf.get("catalog")
 
 
-BRONZE_TABLE = f"{CATALOG}.{BRONZE_SCHEMA}.bronze_flight_status_raw"
-QUARANTINE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_flight_status_quarantine"
-CDC_SOURCE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_flight_status_cdc_source"
-SCD2_TARGET_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_flight_status_history"
-CURRENT_TARGET_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_flight_status_current"
+BRONZE_TABLE = f"{CATALOG}.{BRONZE_SCHEMA}.flight_status_raw"
+QUARANTINE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.flight_status_quarantine"
+CDC_SOURCE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.flight_status_cdc_source"
+SCD2_TARGET_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.flight_status_history"
+CURRENT_TARGET_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.flight_status_current"
 
 @dp.temporary_view(name="flight_status_exploded_tmp")
 def flight_status_exploded_tmp():

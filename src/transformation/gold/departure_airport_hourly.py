@@ -4,12 +4,12 @@ from pyspark.sql import functions as F
 
 CATALOG = spark.conf.get("catalog")
 
-SILVER_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_flight_status_current"
-TARGET_TABLE = f"{CATALOG}.{GOLD_SCHEMA}gold_departure_airport_hourly"
+SILVER_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.flight_status_current"
+TARGET_TABLE = f"{CATALOG}.{GOLD_SCHEMA}.departure_airport_hourly"
 
 GOLD_EXPECTATIONS = {
     "valid_flight_date": "flight_date IS NOT NULL",
-    "valid_airport": "departure_airport_code IS NOT NULL",
+    "valid_airport": "departure_airport_code IS NOT NULL AND TRIM(departure_airport_code) <> ''",
     "valid_hour": "departure_hour BETWEEN 0 AND 23",
     "non_negative_flights": "total_flights >= 0",
     "valid_departure_otp_range": "departure_otp_15_pct BETWEEN 0 AND 1",
