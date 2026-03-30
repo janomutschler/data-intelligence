@@ -30,7 +30,7 @@ BRONZE_TABLE = f"{CATALOG}.{BRONZE_SCHEMA}.bronze_flight_status_raw"
 QUARANTINE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_flight_status_quarantine"
 CDC_SOURCE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_flight_status_cdc_source"
 SCD2_TARGET_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_flight_status_history"
-
+CURRENT_TARGET_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.silver_flight_status_current"
 
 @dp.temporary_view(name="flight_status_exploded_tmp")
 def flight_status_exploded_tmp():
@@ -234,3 +234,12 @@ dp.create_auto_cdc_flow(
     sequence_by=F.col("sequence_ts"),
     stored_as_scd_type=2,
 )
+
+@dp.materialized_view(
+    name=CURRENT_TARGET_TABLE,
+    comment="Current active version of operational flight status records."
+)
+def silver_flight_status_current():
+    history_df = spark.read.table(SCD2_TARGET_TABLE)
+
+    return history_df.filter(F.col("__END_AT").isNull())

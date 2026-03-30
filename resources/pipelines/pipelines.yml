@@ -3,7 +3,7 @@ resources:
     bronze_raw_reference_ingestion_pipeline:
       name: bronze_raw_reference_ingestion_pipeline-${bundle.target}
       catalog: ${var.catalog}
-      target: default
+      schema: default
       serverless: true
       continuous: false
       root_path: "../../src/transformation"
@@ -26,7 +26,7 @@ resources:
     bronze_raw_operational_ingestion_pipeline:
       name: bronze_raw_operational_ingestion_pipeline-${bundle.target}
       catalog: ${var.catalog}
-      target: default
+      schema: default
       serverless: true
       continuous: false
       root_path: "../../src/transformation"
@@ -37,4 +37,6 @@ resources:
             path: ../../src/transformation/bronze/bronze_operational_pipeline.py
         - file:
             path: ../../src/transformation/silver/operational/flight_status.py
+        - file:
+            path: ../../src/transformation/gold/departure_airport_hourly.py
           
