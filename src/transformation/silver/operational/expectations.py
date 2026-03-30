@@ -1,13 +1,18 @@
 from pyspark.sql import functions as F
 
+def is_missing(col_name: str):
+    return (
+        F.col(col_name).isNull() |
+        (F.trim(F.col(col_name)) == "")
+    )
 
 # Missing field checks
-IS_MISSING_OPERATING_AIRLINE_ID = F.col("operating_airline_id").isNull()
-IS_MISSING_OPERATING_FLIGHT_NUMBER = F.col("operating_flight_number").isNull()
-IS_MISSING_DEPARTURE_AIRPORT_CODE = F.col("departure_airport_code").isNull()
-IS_MISSING_ARRIVAL_AIRPORT_CODE = F.col("arrival_airport_code").isNull()
-IS_MISSING_SCHEDULED_DEPARTURE_UTC_TS = F.col("scheduled_departure_utc_ts").isNull()
-IS_MISSING_FLIGHT_DATE = F.col("flight_date").isNull()
+IS_MISSING_OPERATING_AIRLINE_ID = is_missing("operating_airline_id")
+IS_MISSING_OPERATING_FLIGHT_NUMBER = is_missing("operating_flight_number")
+IS_MISSING_DEPARTURE_AIRPORT_CODE = is_missing("departure_airport_code")
+IS_MISSING_ARRIVAL_AIRPORT_CODE = is_missing("arrival_airport_code")
+IS_MISSING_SCHEDULED_DEPARTURE_UTC_TS = is_missing("scheduled_departure_utc_ts")
+IS_MISSING_FLIGHT_DATE = is_missing("flight_date")
 
 
 # Composite validation
