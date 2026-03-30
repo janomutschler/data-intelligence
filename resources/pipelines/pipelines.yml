@@ -1,17 +1,17 @@
 resources:
   pipelines:
-    bronze_raw_reference_ingestion_pipeline:
-      name: bronze_raw_reference_ingestion_pipeline-${bundle.target}
-      catalog: ${var.catalog}
+    reference-medallion-pipeline:
+      name: reference-medallion-pipeline-${bundle.target}
+      catalog: ${var.catalog_name}
       schema: default
       serverless: true
       continuous: false
       root_path: "../../src/transformation"
       configuration:
-        catalog: ${var.catalog}
+        catalog: ${var.catalog_name}
       libraries:
         - file:
-            path: ../../src/transformation/bronze/bronze_reference_pipeline.py
+            path: ../../src/transformation/bronze/reference.py
         - file:
             path: ../../src/transformation/silver/reference/countries.py
         - file:
@@ -23,18 +23,18 @@ resources:
         - file:
             path: ../../src/transformation/silver/reference/cities.py
 
-    bronze_raw_operational_ingestion_pipeline:
-      name: bronze_raw_operational_ingestion_pipeline-${bundle.target}
-      catalog: ${var.catalog}
+    operational-medallion-pipeline:
+      name: operational-medallion-pipeline-${bundle.target}
+      catalog: ${var.catalog_name}
       schema: default
       serverless: true
       continuous: false
       root_path: "../../src/transformation"
       configuration:
-        catalog: ${var.catalog}
+        catalog: ${var.catalog_name}
       libraries:
         - file:
-            path: ../../src/transformation/bronze/bronze_operational_pipeline.py
+            path: ../../src/transformation/bronze/operational.py
         - file:
             path: ../../src/transformation/silver/operational/flight_status.py
         - file:

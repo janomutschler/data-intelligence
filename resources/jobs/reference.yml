@@ -13,7 +13,7 @@ resources:
       schedule:
         quartz_cron_expression: 0 5 10 1 * ?
         timezone_id: UTC
-        pause_status: PAUSED
+        pause_status: UNPAUSED
 
       tasks:
         - task_key: run_reference_entrypoint_py
@@ -21,14 +21,14 @@ resources:
             python_file: ../../src/ingestion/run_reference_entrypoint.py
             parameters:
               - --catalog
-              - ${var.catalog}
+              - ${var.catalog_name}
           environment_key: Default
 
         - task_key: run_bronze_reference_pipeline
           depends_on:
             - task_key: run_reference_entrypoint_py
           pipeline_task:
-            pipeline_id: ${resources.pipelines.bronze_raw_reference_ingestion_pipeline.id}
+            pipeline_id: ${resources.pipelines.reference-medallion-pipeline.id}
 
       environments:
         - environment_key: Default
