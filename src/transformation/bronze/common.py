@@ -1,16 +1,12 @@
-from pyspark import pipelines as dp
 from pyspark.sql.functions import col, current_timestamp
-from config import RAW_DATA_SCHEMA, RAW_DATA_VOLUME, BRONZE_SCHEMA
-
-CATALOG = spark.conf.get("catalog")
-BRONZE_SCHEMA = "bronze"
-RAW_DATA_SCHEMA = "raw_data"
-RAW_DATA_VOLUME = "raw_lh_data"
 
 
-def raw_table_df(source_subpath: str):
-    source_path = f"/Volumes/{CATALOG}/{RAW_DATA_SCHEMA}/{RAW_DATA_VOLUME}/{source_subpath}"
 
+def raw_table_df(spark, source_path: str):
+    """
+    Reads raw ingestion files from a Unity Catalog volume using Databricks Auto Loader (cloudFiles)
+    and returns a streaming DataFrame for the Bronze layer.
+    """
     return (
         spark.readStream
         .format("cloudFiles")
@@ -25,11 +21,4 @@ def raw_table_df(source_subpath: str):
         .withColumn("_ingested_at", current_timestamp())
     )
 
-
-@dp.table(
-    name=f"{CATALOG}.{BRONZE_SCHEMA}.bronze_flight_status_raw",
-    comment="Bronze raw ingestion table for Lufthansa flight status payloads stored as full JSON strings."
-)
-def bronze_flight_status_raw():
-    return raw_table_df("flight_status")
 
