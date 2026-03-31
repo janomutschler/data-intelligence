@@ -42,7 +42,7 @@ def gold_departure_airport_hourly():
         F.hour("scheduled_departure_local_ts")
     )
 
-    departure_on_time = (
+    departure_on_time_or_early = (
         is_operated_as_planned
         & F.col("departure_delay_minutes").isNotNull()
         & (F.col("departure_delay_minutes") <= 15)
@@ -52,6 +52,34 @@ def gold_departure_airport_hourly():
         is_operated_as_planned
         & F.col("arrival_delay_minutes").isNotNull()
         & (F.col("arrival_delay_minutes") <= 15)
+    )
+
+    departure_early = (
+        is_operated_as_planned
+        & (F.col("departure_delay_minutes") < 0)
+    )
+
+    departure_on_time_0_15 = (
+        is_operated_as_planned
+        & (F.col("departure_delay_minutes") <= 15)
+        & (F.col("departure_delay_minutes") >= 0)
+    )
+
+    departure_delay_15_60 = (
+        is_operated_as_planned
+        & (F.col("departure_delay_minutes") > 15)
+        & (F.col("departure_delay_minutes") <= 60)
+    )
+
+    departure_delay_60_120 = (
+        is_operated_as_planned
+        & (F.col("departure_delay_minutes") > 60)
+        & (F.col("departure_delay_minutes") <= 120)
+    )
+
+    departure_delay_120_plus = (
+        is_operated_as_planned
+        & (F.col("departure_delay_minutes") > 120)
     )
 
     aggregated_df = (
@@ -73,8 +101,13 @@ def gold_departure_airport_hourly():
                 F.avg(F.when(is_operated_as_planned, F.col("arrival_delay_minutes"))),
                 F.lit(0.0),
             ).alias("avg_arrival_delay_minutes"),
-            F.sum(F.when(departure_on_time, 1).otherwise(0)).alias("on_time_departures"),
+            F.sum(F.when(departure_on_time_or_early, 1).otherwise(0)).alias("on_time_departures"),
             F.sum(F.when(arrival_on_time, 1).otherwise(0)).alias("on_time_arrivals"),
+            F.sum(F.when(departure_early, 1).otherwise(0)).alias("early_departures"),
+            F.sum(F.when(departure_on_time_0_15, 1).otherwise(0)).alias("on_time_0_15_departures"),
+            F.sum(F.when(departure_delay_15_60, 1).otherwise(0)).alias("delay_15_60_departures"),
+            F.sum(F.when(departure_delay_60_120, 1).otherwise(0)).alias("delay_60_120_departures"),
+            F.sum(F.when(departure_delay_120_plus, 1).otherwise(0)).alias("delay_120_plus_departures"),
         )
     )
 
