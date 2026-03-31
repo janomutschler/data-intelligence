@@ -1,0 +1,45 @@
+resources:
+  pipelines:
+    reference-medallion-pipeline:
+      name: reference-medallion-pipeline-${bundle.target}
+      catalog: ${var.catalog_name}
+      schema: default
+      serverless: true
+      continuous: false
+      root_path: "../../src/transformation"
+      configuration:
+        catalog: ${var.catalog_name}
+      libraries:
+        - file:
+            path: ../../src/transformation/bronze/reference.py
+        - file:
+            path: ../../src/transformation/silver/reference/countries.py
+        - file:
+            path: ../../src/transformation/silver/reference/aircraft.py
+        - file:
+            path: ../../src/transformation/silver/reference/airlines.py
+        - file:
+            path: ../../src/transformation/silver/reference/airports.py
+        - file:
+            path: ../../src/transformation/silver/reference/cities.py
+
+    operational-medallion-pipeline:
+      name: operational-medallion-pipeline-${bundle.target}
+      catalog: ${var.catalog_name}
+      schema: default
+      serverless: true
+      continuous: false
+      root_path: "../../src/transformation"
+      configuration:
+        catalog: ${var.catalog_name}
+      libraries:
+        - file:
+            path: ../../src/transformation/bronze/operational.py
+        - file:
+            path: ../../src/transformation/silver/operational/flight_status.py
+        - file:
+            path: ../../src/transformation/gold/departure_airport_hourly_performance.py
+        - file:
+            path: ../../src/transformation/gold/departure_airport_distance_category_daily_performance.py
+        - file:
+            path: ../../src/transformation/gold/route_daily_performance.py

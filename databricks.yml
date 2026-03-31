@@ -1,0 +1,66 @@
+bundle:
+  name: lh-data-platform
+
+include:
+  - resources/jobs/*.yml
+  - resources/pipelines/*.yml
+
+sync:
+  include:
+    - src
+
+variables:
+  catalog_name:
+    default: data_intelligence_${bundle.target}
+  raw_volume_name:
+    default: raw_lh_data
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      host: https://dbc-1189a44d-7664.cloud.databricks.com/
+
+
+  prod:
+    mode: production
+    presets:
+      tags:
+          prod: prod
+    workspace:
+      host: https://dbc-1189a44d-7664.cloud.databricks.com/
+      root_path: /Workspace/Users/jmutschl42@gmail.com/.bundle/${bundle.name}/${bundle.target}
+
+experimental:
+  skip_name_prefix_for_schema: true
+
+resources:
+  schemas:
+    raw_data:
+      catalog_name: ${var.catalog_name}
+      name: raw_data
+      comment: "Schema for raw landed source files"
+
+    bronze:
+      catalog_name: ${var.catalog_name}
+      name: bronze
+      comment: "Bronze layer for raw ingested tables"
+
+    silver:
+      catalog_name: ${var.catalog_name}
+      name: silver
+      comment: "Silver layer for cleaned and standardized tables"
+
+    gold:
+      catalog_name: ${var.catalog_name}
+      name: gold
+      comment: "Gold layer for analytics-ready tables"
+
+  volumes:
+    raw_lh_data:
+      catalog_name: ${var.catalog_name}
+      schema_name: raw_data
+      name: ${var.raw_volume_name}
+      volume_type: MANAGED
+      comment: "Raw landing volume for Lufthansa source files"

@@ -1,0 +1,5 @@
+RAW_DATA_SCHEMA = "raw_data"
+RAW_DATA_VOLUME = "raw_lh_data"
+BRONZE_SCHEMA = "bronze"
+SILVER_SCHEMA = "silver"
+GOLD_SCHEMA = "gold"

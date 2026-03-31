@@ -1,0 +1,38 @@
+resources:
+  jobs:
+    reference_end_to_end:
+      name: reference-end-to-end-${bundle.target}
+
+      email_notifications:
+        on_failure:
+          - jmutschl42@gmail.com
+
+      notification_settings:
+        no_alert_for_skipped_runs: true
+
+      schedule:
+        quartz_cron_expression: 0 5 10 1 * ?
+        timezone_id: UTC
+        pause_status: PAUSED
+
+      tasks:
+        - task_key: run_reference_entrypoint_py
+          spark_python_task:
+            python_file: ../../src/ingestion/run_reference_entrypoint.py
+            parameters:
+              - --catalog
+              - ${var.catalog_name}
+          environment_key: Default
+
+        - task_key: run_reference_medallion_pipeline
+          depends_on:
+            - task_key: run_reference_entrypoint_py
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.reference-medallion-pipeline.id}
+
+      environments:
+        - environment_key: Default
+          spec:
+            environment_version: "4"
+
+      performance_target: PERFORMANCE_OPTIMIZED
