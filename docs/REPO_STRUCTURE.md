@@ -38,3 +38,37 @@ Lakeflow Spark Declarative Pipelines (DP via `pyspark.pipelines`) that implement
 Why this structure?
 - Mirrors the medallion architecture so reviewers can navigate quickly.
 - Encapsulates Silver business logic and Gold semantic models separately.
+
+
+## Full Structure:
+```mermaid
+flowchart TD
+
+    A[Root] --> B[databricks.yml]
+
+    A --> C[resources/]
+    C --> C1[jobs/]
+    C1 --> C11[operational.yml]
+    C1 --> C12[reference.yml]
+    C --> C2[pipelines/]
+    C2 --> C21[pipelines.yml]
+
+    A --> D[docs/]
+
+    A --> E[src/]
+
+    E --> F[ingestion/]
+     F --> F1[common/]
+    F --> F2[scripts/]
+    F2 --> F21[reference_data.py]
+    F2 --> F22[operational_data.py]
+    F --> F3[config.py]
+
+    E --> G[transformation/]
+
+    G --> G1[bronze/]
+    G --> G2[silver/]
+    G2 --> G21[operational/]
+    G2 --> G22[reference/]
+    G --> G3[gold/]
+```
