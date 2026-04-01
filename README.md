@@ -100,7 +100,5 @@ Reference (SCD1 current dimensions + quarantine):
 - `docs/REPO_STRUCTURE.md` – repo layout and rationale
 - `docs/PIPELINE.md` – job/pipeline flow, schedules, table lineage
 - `docs/DATA_QUALITY.md` – rules + actions (drop vs quarantine)
-- `docs/DASHBOARD.md` – dashboard spec + queries
 - `docs/OPERATIONS_AND_DEPLOYMENT.md` – deploy/runbook/troubleshooting
-- `docs/PRESENTATION_SCRIPT.md` – 10-minute talk track for final review
 
