@@ -3,7 +3,7 @@
 ## 1. Busiest Airports
 ```sql
 SELECT departure_airport_code, SUM(total_flights) AS flights
-FROM gold_departure_airport_hourly
+FROM departure_airport_hourly
 GROUP BY departure_airport_code
 ORDER BY flights DESC;
 ```
@@ -11,7 +11,7 @@ ORDER BY flights DESC;
 ```sql
 SELECT departure_airport_code,
        SUM(avg_departure_delay_minutes * total_flights) / SUM(total_flights) AS avg_delay
-FROM gold_departure_airport_hourly
+FROM departure_airport_hourly
 GROUP BY departure_airport_code
 ORDER BY avg_delay DESC;
 ```
@@ -20,7 +20,7 @@ ORDER BY avg_delay DESC;
 ```sql
 SELECT departure_airport_code,
        SUM(cancelled_flights) / SUM(total_flights) AS cancellation_rate
-FROM gold_departure_airport_hourly
+FROM departure_airport_hourly
 GROUP BY departure_airport_code
 ORDER BY cancellation_rate DESC;
 ```
@@ -29,7 +29,7 @@ ORDER BY cancellation_rate DESC;
 ```sql
 SELECT departure_airport_code,
        SUM(on_time_departures) / SUM(total_flights) AS otp
-FROM gold_departure_airport_hourly
+FROM departure_airport_hourly
 GROUP BY departure_airport_code
 ORDER BY otp DESC;
 ```
@@ -38,7 +38,7 @@ ORDER BY otp DESC;
 ```sql
 SELECT departure_hour,
        SUM(avg_departure_delay_minutes * total_flights) / SUM(total_flights) AS avg_delay
-FROM gold_departure_airport_hourly
+FROM departure_airport_hourly
 GROUP BY departure_hour
 ORDER BY avg_delay DESC;
 ```

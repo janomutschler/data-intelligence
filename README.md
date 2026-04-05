@@ -1,28 +1,104 @@
 # ✈️ Lufthansa Data Intelligence Pipeline
-## 📌 Overview
 
-This project builds a production-style data intelligence platform using Lufthansa flight data.
+A production-style lakehouse pipeline that ingests Lufthansa API data, lands raw JSON in Unity Catalog volumes, transforms it through a Medallion architecture (Bronze/Silver/Gold), and serves analytics-ready tables for dashboards.
 
-The goal is to design an end-to-end pipeline that:
+## Problem statement
+Operational flight performance data is high-volume, frequently updated, and often inconsistent across endpoints/runs. The goal of this project is to build an end-to-end, automated, reproducible pipeline that:
+- lands raw API payloads safely (schema-flexible),
+- enforces data quality and traceability in curated layers,
+- maintains change history where needed (CDC/SCD),
+- produces Gold aggregates that can power dashboards and KPI analysis.
 
-• Ingests operational and reference data from the Lufthansa API
+## Tech stack
+- Databricks Lakehouse
+- Lakeflow Jobs (Workflows)
+- Lakeflow Spark Declarative Pipelines (dp via `pyspark.pipelines`)
+- Apache Spark
+- Delta Lake (tables)
+- Unity Catalog (catalog/schemas/volumes)
+- Lufthansa API
 
-• Stores raw data in a lakehouse architecture (Databricks + Delta Lake)
+## What is deployed
+This repo is a Databricks Declarative Automation Bundle (DAB). The bundle defines:
+- Catalog: `data_intelligence_${bundle.target}`
+- Schemas: `raw_data`, `bronze`, `silver`, `gold`
+- Managed UC Volume: `raw_data.raw_lh_data`
+- Jobs:
+  - `operational_end_to_end` (operational ingestion + medallion pipeline)
+  - `reference_end_to_end` (reference ingestion + medallion pipeline)
+- Pipelines:
+  - `operational-medallion-pipeline`
+  - `reference-medallion-pipeline`
 
-• Transforms data into analytics-ready datasets
+## Repository quick start
 
-• Enables insights through dashboards and data products
+### Prerequisites
+1. Databricks workspace access (Unity Catalog enabled).
+2. Target Catalog exists
+2. Databricks CLI installed and authenticated.
+3. Secrets configured in Databricks:
+   - Secret scope: `lh-api`
+   - Keys:
+     - `client_id`
+     - `client_secret`
 
-## 🧠 Tech Stack
+### Validate + deploy the bundle (dev)
+From repo root:
+```bash
+databricks bundle validate -t dev
+databricks bundle deploy -t dev
+```
 
-• Databricks (Lakehouse Platform)
+### Run end-to-end (manual runs recommended for demos)
+Run **reference first** (creates/refreshes reference dimension tables used by Gold distance metrics):
+```bash
+databricks bundle run reference_end_to_end -t dev
+```
 
-• Apache Spark
+Then run operational:
+```bash
+databricks bundle run operational_end_to_end -t dev
+```
 
-• Delta Lake
+> Note: Schedules in `resources/jobs/*.yml` are set to `PAUSED` by default. For production scheduling, set `pause_status: UNPAUSED` or configure in the UI.
 
-• Lufthansa OpenAPI
+## What tables you should see
 
-## 🎯 Goal
+### Raw landing (files)
+Unity Catalog volume:
+- `/Volumes/<catalog>/raw_data/raw_lh_data/reference_data/...`
+- `/Volumes/<catalog>/raw_data/raw_lh_data/flight_status/...`
 
-Build a scalable, modular, and production-ready data pipeline following best practices in data engineering and data intelligence.
+### Bronze (raw JSON in Delta)
+- `<catalog>.bronze.flight_status_raw`
+- `<catalog>.bronze.airports_raw`
+- `<catalog>.bronze.airlines_raw`
+- `<catalog>.bronze.aircraft_raw`
+- `<catalog>.bronze.cities_raw`
+- `<catalog>.bronze.countries_raw`
+
+### Silver (curated + validated)
+Operational:
+- `<catalog>.silver.flight_status_quarantine`
+- `<catalog>.silver.flight_status_history` (SCD2)
+- `<catalog>.silver.flight_status_current`
+
+Reference (SCD1 current dimensions + quarantine):
+- `<catalog>.silver.airports_current`, `<catalog>.silver.airports_quarantine`
+- `<catalog>.silver.airlines_current`, `<catalog>.silver.airlines_quarantine`
+- `<catalog>.silver.aircraft_current`, `<catalog>.silver.aircraft_quarantine`
+- `<catalog>.silver.cities_current`, `<catalog>.silver.cities_quarantine`
+- `<catalog>.silver.countries_current`, `<catalog>.silver.countries_quarantine`
+
+### Gold (analytics-ready)
+- `<catalog>.gold.departure_airport_hourly`
+- `<catalog>.gold.route_daily_performance`
+- `<catalog>.gold.airport_distance_category_daily_performance`
+
+## Documentation
+- `docs/ARCHITECTURE.md` – system architecture + medallion mapping
+- `docs/REPO_STRUCTURE.md` – repo layout and rationale
+- `docs/PIPELINE.md` – job/pipeline flow, schedules, table lineage
+- `docs/DATA_QUALITY.md` – rules + actions (drop vs quarantine)
+- `docs/OPERATIONS_AND_DEPLOYMENT.md` – deploy/runbook/troubleshooting
+
