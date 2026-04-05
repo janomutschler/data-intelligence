@@ -81,8 +81,6 @@ def fetch_reference_pages(ctx: IngestionContext, reference_type: str) -> int:
         )
 
         if response is None:
-            # Either a real failure (logged as 'failed') or no data for this offset
-            # (logged as 'no_data'). Either way, stop pagination cleanly.
             break
 
         try:

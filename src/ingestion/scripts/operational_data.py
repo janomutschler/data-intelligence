@@ -92,8 +92,6 @@ def fetch_airport_window(
         )
 
         if response is None:
-            # Either a real failure (logged as 'failed') or no data for this window
-            # (logged as 'no_data'). Either way, stop pagination cleanly.
             break
 
         try:
