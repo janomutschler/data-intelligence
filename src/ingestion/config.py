@@ -5,7 +5,7 @@ BASE_URL = "https://api.lufthansa.com"
 
 RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 
-# Statuses that mean "no data exists for this request" — expected empty results, not failures.
+# Statuses that mean "no data exists for this request (resourcenotfound)" — expected empty results, not failures.
 NO_DATA_STATUSES = {404}
 
 REQUEST_TIMEOUT = 30
