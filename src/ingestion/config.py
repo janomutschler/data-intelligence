@@ -1,16 +1,12 @@
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--catalog", required=True)
-args = parser.parse_args()
-
-CATALOG = args.catalog
 SCHEMA = "raw_data"
 VOLUME = "raw_lh_data"
 
 BASE_URL = "https://api.lufthansa.com"
 
 RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
+
+# Statuses that mean "no data exists for this request" — expected empty results, not failures.
+NO_DATA_STATUSES = {404}
 
 REQUEST_TIMEOUT = 30
 MAX_RETRIES = 10

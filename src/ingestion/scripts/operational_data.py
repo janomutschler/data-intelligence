@@ -3,30 +3,32 @@ Handles ingestion of operational flight-status data from the Lufthansa API
 and stores raw JSON files in Unity Catalog volumes.
 """
 import json
+import logging
 import time
 from functools import partial
+from typing import Callable
 
-from config import (
-    BASE_URL,
-    AIRPORTS,
-    SLEEP_SECONDS,
-    DEPARTURE_WINDOW_OFFSET_HOURS,
-    ARRIVAL_WINDOW_OFFSET_HOURS,
-)
 from common.api_client import request_with_retry
-from common.utils import utc_now_str, get_target_window_start
+from common.context import IngestionContext
+from common.logging import append_flight_status_log, create_flight_status_log_table
 from common.paths import flight_status_directory
 from common.storage import mkdirs, write_json
-from common.logging import (
-    append_flight_status_log,
-    create_flight_status_log_table,
+from common.utils import get_target_window_start, utc_now_str
+from config import (
+    AIRPORTS,
+    ARRIVAL_WINDOW_OFFSET_HOURS,
+    BASE_URL,
+    DEPARTURE_WINDOW_OFFSET_HOURS,
+    SLEEP_SECONDS,
 )
+
+logger = logging.getLogger(__name__)
 
 LIMIT = 50
 
 
 def fetch_airport_window(
-    ctx,
+    ctx: IngestionContext,
     airport: str,
     target_date: str,
     window_start: str,
@@ -38,7 +40,9 @@ def fetch_airport_window(
 
     Returns the number of successfully saved pages.
     """
-    log_func = partial(append_flight_status_log, ctx.spark, ctx.run_id)
+    log_func: Callable = partial(
+        append_flight_status_log, ctx.spark, ctx.catalog, ctx.run_id
+    )
 
     offset = 0
     page = 0
@@ -49,6 +53,7 @@ def fetch_airport_window(
         params = {"limit": LIMIT, "offset": offset}
 
         directory = flight_status_directory(
+            catalog=ctx.catalog,
             direction=direction,
             airport=airport,
             flight_date=target_date,
@@ -69,9 +74,13 @@ def fetch_airport_window(
             "file_path": file_path,
         }
 
-        print(
-            f"[{direction}] airport={airport} "
-            f"window={window_start} page={page} offset={offset}"
+        logger.info(
+            "[%s] airport=%s window=%s page=%d offset=%d",
+            direction,
+            airport,
+            window_start,
+            page,
+            offset,
         )
 
         response = request_with_retry(
@@ -83,17 +92,14 @@ def fetch_airport_window(
         )
 
         if response is None:
-            print("Request failed after retries.")
-            break
-
-        if response.status_code != 200:
-            print(f"Request failed: {response.status_code} {response.text[:300]}")
+            # Either a real failure (logged as 'failed') or no data for this window
+            # (logged as 'no_data'). Either way, stop pagination cleanly.
             break
 
         try:
             data = response.json()
         except ValueError:
-            print("Invalid JSON response.")
+            logger.error("Invalid JSON in response — stopping pagination.")
             log_func(
                 {
                     "timestamp_utc": utc_now_str(),
@@ -113,7 +119,7 @@ def fetch_airport_window(
         )
 
         if total_count is None:
-            print("Missing TotalCount, stopping pagination.")
+            logger.warning("Missing TotalCount in response — stopping pagination.")
             log_func(
                 {
                     "timestamp_utc": utc_now_str(),
@@ -144,13 +150,11 @@ def fetch_airport_window(
             }
         )
 
-        print(f"Saved: {file_path}")
-        print(f"Total flights: {total_count}")
-        
+        logger.info("Saved %s — total flights in window: %d", file_path, total_count)
         successful_pages += 1
 
         if offset + LIMIT >= total_count:
-            print("No more pages.")
+            logger.info("All pages fetched for window.")
             break
 
         offset += LIMIT
@@ -161,7 +165,7 @@ def fetch_airport_window(
 
 
 def fetch_all_airports_for_window(
-    ctx,
+    ctx: IngestionContext,
     direction: str,
     delay_hours: int,
 ) -> int:
@@ -171,19 +175,17 @@ def fetch_all_airports_for_window(
     Returns the total number of successfully saved pages.
     """
     window_start = get_target_window_start(delay_hours)
-
-    if window_start.endswith("T00:00"):
-        print(f"Skipping midnight window: {window_start}")
-        return 0
-
     target_date = window_start[:10]
     total_pages = 0
 
-    print("Starting flight-status ingestion:")
-    print(f"  direction    = {direction}")
-    print(f"  delay_hours  = {delay_hours}")
-    print(f"  target_date  = {target_date}")
-    print(f"  window_start = {window_start}")
+    logger.info(
+        "Starting flight-status ingestion: direction=%s delay_hours=%d "
+        "target_date=%s window_start=%s",
+        direction,
+        delay_hours,
+        target_date,
+        window_start,
+    )
 
     for airport in AIRPORTS:
         total_pages += fetch_airport_window(
@@ -195,40 +197,34 @@ def fetch_all_airports_for_window(
         )
         time.sleep(SLEEP_SECONDS)
 
-    print(f"Finished ingestion. Total pages fetched: {total_pages}")
+    logger.info("Finished window ingestion. Pages fetched: %d", total_pages)
     return total_pages
 
 
-def init_operational_ingestion(spark) -> str:
+def init_operational_ingestion(spark, catalog: str) -> str:
     """
     Ensure required log table exists and return the run_id for this execution.
     """
-    create_flight_status_log_table(spark)
+    create_flight_status_log_table(spark, catalog)
     return utc_now_str()
 
 
-def run_flight_status_ingestion(ctx) -> int:
+def run_flight_status_ingestion(ctx: IngestionContext) -> int:
     """
-    Run flight-status ingestion for configured departure and arrival windows.
+    Run flight-status ingestion for all configured departure and arrival windows.
 
     Returns the total number of successfully saved pages.
     """
-    total_pages_departures = 0
-    for hour in DEPARTURE_WINDOW_OFFSET_HOURS:
-        total_pages_departures += fetch_all_airports_for_window(
-            ctx=ctx,
-            direction="departures",
-            delay_hours=hour,
-        )
-
-    total_pages_arrivals = 0
-    for hour in ARRIVAL_WINDOW_OFFSET_HOURS:
-        total_pages_arrivals += fetch_all_airports_for_window(
-            ctx=ctx,
-            direction="arrivals",
-            delay_hours=hour,
-        )
+    total_pages_departures = sum(
+        fetch_all_airports_for_window(ctx=ctx, direction="departures", delay_hours=h)
+        for h in DEPARTURE_WINDOW_OFFSET_HOURS
+    )
+    total_pages_arrivals = sum(
+        fetch_all_airports_for_window(ctx=ctx, direction="arrivals", delay_hours=h)
+        for h in ARRIVAL_WINDOW_OFFSET_HOURS
+    )
 
     total_pages = total_pages_departures + total_pages_arrivals
-    print(f"Total pages fetched: {total_pages}")
+    logger.info("Ingestion complete. Total pages fetched: %d", total_pages)
     return total_pages
+
