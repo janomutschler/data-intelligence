@@ -32,35 +32,31 @@ VALID_AIRPORT_NAME_EXPECTATION = "airport_name IS NOT NULL AND TRIM(airport_name
 VALID_CITY_CODE_EXPECTATION = "city_code IS NOT NULL AND TRIM(city_code) <> ''"
 VALID_COUNTRY_CODE_EXPECTATION = "country_code IS NOT NULL AND TRIM(country_code) <> ''"
 
+_airport_struct = StructType([
+    StructField("AirportCode", StringType(), True),
+    StructField("Position", StructType([
+        StructField("Coordinate", StructType([
+            StructField("Latitude", DoubleType(), True),
+            StructField("Longitude", DoubleType(), True),
+        ]), True)
+    ]), True),
+    StructField("CityCode", StringType(), True),
+    StructField("CountryCode", StringType(), True),
+    StructField("LocationType", StringType(), True),
+    StructField("Names", StructType([
+        StructField("Name", StructType([
+            StructField("@LanguageCode", StringType(), True),
+            StructField("$", StringType(), True),
+        ]), True)
+    ]), True),
+    StructField("UtcOffset", StringType(), True),
+    StructField("TimeZoneId", StringType(), True),
+])
+
 airports_array_schema = StructType([
     StructField("AirportResource", StructType([
         StructField("Airports", StructType([
-            StructField(
-                "Airport",
-                ArrayType(
-                    StructType([
-                        StructField("AirportCode", StringType(), True),
-                        StructField("Position", StructType([
-                            StructField("Coordinate", StructType([
-                                StructField("Latitude", DoubleType(), True),
-                                StructField("Longitude", DoubleType(), True),
-                            ]), True)
-                        ]), True),
-                        StructField("CityCode", StringType(), True),
-                        StructField("CountryCode", StringType(), True),
-                        StructField("LocationType", StringType(), True),
-                        StructField("Names", StructType([
-                            StructField("Name", StructType([
-                                StructField("@LanguageCode", StringType(), True),
-                                StructField("$", StringType(), True),
-                            ]), True)
-                        ]), True),
-                        StructField("UtcOffset", StringType(), True),
-                        StructField("TimeZoneId", StringType(), True),
-                    ])
-                ),
-                True,
-            )
+            StructField("Airport", ArrayType(_airport_struct), True),
         ]), True)
     ]), True)
 ])
@@ -68,30 +64,7 @@ airports_array_schema = StructType([
 airports_single_schema = StructType([
     StructField("AirportResource", StructType([
         StructField("Airports", StructType([
-            StructField(
-                "Airport",
-                StructType([
-                    StructField("AirportCode", StringType(), True),
-                    StructField("Position", StructType([
-                        StructField("Coordinate", StructType([
-                            StructField("Latitude", DoubleType(), True),
-                            StructField("Longitude", DoubleType(), True),
-                        ]), True)
-                    ]), True),
-                    StructField("CityCode", StringType(), True),
-                    StructField("CountryCode", StringType(), True),
-                    StructField("LocationType", StringType(), True),
-                    StructField("Names", StructType([
-                        StructField("Name", StructType([
-                            StructField("@LanguageCode", StringType(), True),
-                            StructField("$", StringType(), True),
-                        ]), True)
-                    ]), True),
-                    StructField("UtcOffset", StringType(), True),
-                    StructField("TimeZoneId", StringType(), True),
-                ]),
-                True,
-            )
+            StructField("Airport", _airport_struct, True),
         ]), True)
     ]), True)
 ])

@@ -19,30 +19,26 @@ VALID_CITY_CODE_EXPECTATION = "city_code IS NOT NULL AND TRIM(city_code) <> ''"
 VALID_COUNTRY_CODE_EXPECTATION = "country_code IS NOT NULL AND TRIM(country_code) <> ''"
 VALID_CITY_NAME_EXPECTATION = "city_name IS NOT NULL AND TRIM(city_name) <> ''"
 
+_city_struct = StructType([
+    StructField("CityCode", StringType(), True),
+    StructField("CountryCode", StringType(), True),
+    StructField("Names", StructType([
+        StructField("Name", StructType([
+            StructField("@LanguageCode", StringType(), True),
+            StructField("$", StringType(), True),
+        ]), True)
+    ]), True),
+    StructField("UtcOffset", StringType(), True),
+    StructField("TimeZoneId", StringType(), True),
+    StructField("Airports", StructType([
+        StructField("AirportCode", StringType(), True)
+    ]), True),
+])
+
 cities_array_schema = StructType([
     StructField("CityResource", StructType([
         StructField("Cities", StructType([
-            StructField(
-                "City",
-                ArrayType(
-                    StructType([
-                        StructField("CityCode", StringType(), True),
-                        StructField("CountryCode", StringType(), True),
-                        StructField("Names", StructType([
-                            StructField("Name", StructType([
-                                StructField("@LanguageCode", StringType(), True),
-                                StructField("$", StringType(), True),
-                            ]), True)
-                        ]), True),
-                        StructField("UtcOffset", StringType(), True),
-                        StructField("TimeZoneId", StringType(), True),
-                        StructField("Airports", StructType([
-                            StructField("AirportCode", StringType(), True)
-                        ]), True),
-                    ])
-                ),
-                True,
-            )
+            StructField("City", ArrayType(_city_struct), True),
         ]), True)
     ]), True)
 ])
@@ -50,25 +46,7 @@ cities_array_schema = StructType([
 cities_single_schema = StructType([
     StructField("CityResource", StructType([
         StructField("Cities", StructType([
-            StructField(
-                "City",
-                StructType([
-                    StructField("CityCode", StringType(), True),
-                    StructField("CountryCode", StringType(), True),
-                    StructField("Names", StructType([
-                        StructField("Name", StructType([
-                            StructField("@LanguageCode", StringType(), True),
-                            StructField("$", StringType(), True),
-                        ]), True)
-                    ]), True),
-                    StructField("UtcOffset", StringType(), True),
-                    StructField("TimeZoneId", StringType(), True),
-                    StructField("Airports", StructType([
-                        StructField("AirportCode", StringType(), True)
-                    ]), True),
-                ]),
-                True,
-            )
+            StructField("City", _city_struct, True),
         ]), True)
     ]), True)
 ])

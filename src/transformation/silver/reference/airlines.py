@@ -17,25 +17,21 @@ IS_INVALID_AIRLINE_ROW = IS_INVALID_AIRLINE_ID | IS_INVALID_AIRLINE_NAME
 VALID_AIRLINE_ID_EXPECTATION = "airline_id IS NOT NULL AND TRIM(airline_id) <> ''"
 VALID_AIRLINE_NAME_EXPECTATION = "airline_name IS NOT NULL AND TRIM(airline_name) <> ''"
 
+_airline_struct = StructType([
+    StructField("AirlineID", StringType(), True),
+    StructField("AirlineID_ICAO", StringType(), True),
+    StructField("Names", StructType([
+        StructField("Name", StructType([
+            StructField("@LanguageCode", StringType(), True),
+            StructField("$", StringType(), True),
+        ]), True)
+    ]), True),
+])
+
 airlines_array_schema = StructType([
     StructField("AirlineResource", StructType([
         StructField("Airlines", StructType([
-            StructField(
-                "Airline",
-                ArrayType(
-                    StructType([
-                        StructField("AirlineID", StringType(), True),
-                        StructField("AirlineID_ICAO", StringType(), True),
-                        StructField("Names", StructType([
-                            StructField("Name", StructType([
-                                StructField("@LanguageCode", StringType(), True),
-                                StructField("$", StringType(), True),
-                            ]), True)
-                        ]), True),
-                    ])
-                ),
-                True,
-            )
+            StructField("Airline", ArrayType(_airline_struct), True),
         ]), True)
     ]), True)
 ])
@@ -43,20 +39,7 @@ airlines_array_schema = StructType([
 airlines_single_schema = StructType([
     StructField("AirlineResource", StructType([
         StructField("Airlines", StructType([
-            StructField(
-                "Airline",
-                StructType([
-                    StructField("AirlineID", StringType(), True),
-                    StructField("AirlineID_ICAO", StringType(), True),
-                    StructField("Names", StructType([
-                        StructField("Name", StructType([
-                            StructField("@LanguageCode", StringType(), True),
-                            StructField("$", StringType(), True),
-                        ]), True)
-                    ]), True),
-                ]),
-                True,
-            )
+            StructField("Airline", _airline_struct, True),
         ]), True)
     ]), True)
 ])

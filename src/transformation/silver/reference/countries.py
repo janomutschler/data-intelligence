@@ -17,24 +17,20 @@ IS_INVALID_COUNTRY_ROW = IS_INVALID_COUNTRY_CODE | IS_INVALID_COUNTRY_NAME
 VALID_COUNTRY_CODE_EXPECTATION = "country_code IS NOT NULL AND TRIM(country_code) <> ''"
 VALID_COUNTRY_NAME_EXPECTATION = "country_name IS NOT NULL AND TRIM(country_name) <> ''"
 
+_country_struct = StructType([
+    StructField("CountryCode", StringType(), True),
+    StructField("Names", StructType([
+        StructField("Name", StructType([
+            StructField("@LanguageCode", StringType(), True),
+            StructField("$", StringType(), True),
+        ]), True)
+    ]), True),
+])
+
 countries_array_schema = StructType([
     StructField("CountryResource", StructType([
         StructField("Countries", StructType([
-            StructField(
-                "Country",
-                ArrayType(
-                    StructType([
-                        StructField("CountryCode", StringType(), True),
-                        StructField("Names", StructType([
-                            StructField("Name", StructType([
-                                StructField("@LanguageCode", StringType(), True),
-                                StructField("$", StringType(), True),
-                            ]), True)
-                        ]), True),
-                    ])
-                ),
-                True,
-            )
+            StructField("Country", ArrayType(_country_struct), True),
         ]), True)
     ]), True)
 ])
@@ -42,19 +38,7 @@ countries_array_schema = StructType([
 countries_single_schema = StructType([
     StructField("CountryResource", StructType([
         StructField("Countries", StructType([
-            StructField(
-                "Country",
-                StructType([
-                    StructField("CountryCode", StringType(), True),
-                    StructField("Names", StructType([
-                        StructField("Name", StructType([
-                            StructField("@LanguageCode", StringType(), True),
-                            StructField("$", StringType(), True),
-                        ]), True)
-                    ]), True),
-                ]),
-                True,
-            )
+            StructField("Country", _country_struct, True),
         ]), True)
     ]), True)
 ])
