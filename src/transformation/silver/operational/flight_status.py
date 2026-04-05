@@ -18,6 +18,7 @@ from silver.operational.expressions import (
     parse_local_timestamp,
     parse_utc_timestamp,
 )
+from silver.operational.constants import FlightStatusCode
 from silver.operational.expectations import (
     IS_INVALID_FLIGHT_ROW,
     FLIGHT_STATUS_EXPECTATIONS,
@@ -140,19 +141,19 @@ def flight_status_enriched_tmp():
         .withColumn("has_missing_status", F.col("flight_status_code").isNull())
         .withColumn(
             "is_landed",
-            F.coalesce(F.col("flight_status_code") == F.lit("LD"), F.lit(False)),
+            F.coalesce(F.col("flight_status_code") == F.lit(FlightStatusCode.LANDED), F.lit(False)),
         )
         .withColumn(
             "is_cancelled",
-            F.coalesce(F.col("flight_status_code") == F.lit("CD"), F.lit(False)),
+            F.coalesce(F.col("flight_status_code") == F.lit(FlightStatusCode.CANCELLED), F.lit(False)),
         )
         .withColumn(
             "is_diverted",
-            F.coalesce(F.col("flight_status_code") == F.lit("DV"), F.lit(False)),
+            F.coalesce(F.col("flight_status_code") == F.lit(FlightStatusCode.DIVERTED), F.lit(False)),
         )
         .withColumn(
             "is_rerouted",
-            F.coalesce(F.col("flight_status_code") == F.lit("RT"), F.lit(False)),
+            F.coalesce(F.col("flight_status_code") == F.lit(FlightStatusCode.REROUTED), F.lit(False)),
         )
     )
 
