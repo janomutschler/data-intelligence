@@ -1,4 +1,5 @@
-from config import SILVER_SCHEMA, GOLD_SCHEMA
+from config import GOLD_SCHEMA, SILVER_SCHEMA
+from gold.common import build_flight_flags, flight_flag_cols
 from pyspark import pipelines as dp
 from pyspark.sql import functions as F
 
@@ -16,22 +17,18 @@ GOLD_EXPECTATIONS = {
     "valid_arrival_otp_range": "arrival_otp_15_pct BETWEEN 0 AND 1",
 }
 
+
 @dp.materialized_view(
     name=TARGET_TABLE,
-    comment="Hourly airport departure operations metrics aggregated from silver flight status."
+    comment="Hourly airport departure operations metrics aggregated from silver flight status.",
 )
 @dp.expect_all_or_drop(GOLD_EXPECTATIONS)
 def gold_departure_airport_hourly():
     silver_df = spark.read.table(SILVER_TABLE)
+    flagged_df = build_flight_flags(silver_df)
+    is_cancelled, is_route_disrupted, _is_operated, is_operated_as_planned = flight_flag_cols()
 
-    is_cancelled = F.coalesce(F.col("is_cancelled"), F.lit(False))
-    is_diverted = F.coalesce(F.col("is_diverted"), F.lit(False))
-    is_rerouted = F.coalesce(F.col("is_rerouted"), F.lit(False))
-    is_route_disrupted = is_diverted | is_rerouted
-    is_operated = ~is_cancelled
-    is_operated_as_planned = is_operated & ~is_route_disrupted
-
-    relevant_flights_df = silver_df.filter(
+    relevant_flights_df = flagged_df.filter(
         F.col("actual_departure_utc_ts").isNotNull()
         | F.col("actual_arrival_utc_ts").isNotNull()
         | is_cancelled
@@ -39,7 +36,7 @@ def gold_departure_airport_hourly():
 
     enriched_df = relevant_flights_df.withColumn(
         "departure_hour",
-        F.hour("scheduled_departure_local_ts")
+        F.hour("scheduled_departure_local_ts"),
     )
 
     departure_on_time_or_early = (
@@ -47,48 +44,32 @@ def gold_departure_airport_hourly():
         & F.col("departure_delay_minutes").isNotNull()
         & (F.col("departure_delay_minutes") <= 15)
     )
-
     arrival_on_time = (
         is_operated_as_planned
         & F.col("arrival_delay_minutes").isNotNull()
         & (F.col("arrival_delay_minutes") <= 15)
     )
-
-    departure_early = (
-        is_operated_as_planned
-        & (F.col("departure_delay_minutes") < 0)
-    )
-
+    departure_early = is_operated_as_planned & (F.col("departure_delay_minutes") < 0)
     departure_on_time_0_15 = (
         is_operated_as_planned
-        & (F.col("departure_delay_minutes") <= 15)
         & (F.col("departure_delay_minutes") >= 0)
+        & (F.col("departure_delay_minutes") <= 15)
     )
-
     departure_delay_15_60 = (
         is_operated_as_planned
         & (F.col("departure_delay_minutes") > 15)
         & (F.col("departure_delay_minutes") <= 60)
     )
-
     departure_delay_60_120 = (
         is_operated_as_planned
         & (F.col("departure_delay_minutes") > 60)
         & (F.col("departure_delay_minutes") <= 120)
     )
-
-    departure_delay_120_plus = (
-        is_operated_as_planned
-        & (F.col("departure_delay_minutes") > 120)
-    )
+    departure_delay_120_plus = is_operated_as_planned & (F.col("departure_delay_minutes") > 120)
 
     aggregated_df = (
         enriched_df
-        .groupBy(
-            "flight_date",
-            "departure_airport_code",
-            "departure_hour",
-        )
+        .groupBy("flight_date", "departure_airport_code", "departure_hour")
         .agg(
             F.count("*").alias("total_flights"),
             F.sum(is_cancelled.cast("int")).alias("cancelled_flights"),
@@ -111,30 +92,25 @@ def gold_departure_airport_hourly():
         )
     )
 
-    result_df = (
+    return (
         aggregated_df
-        .withColumn(
-            "operated_flights",
-            F.col("total_flights") - F.col("cancelled_flights")
-        )
+        .withColumn("operated_flights", F.col("total_flights") - F.col("cancelled_flights"))
         .withColumn(
             "operated_as_planned_flights",
-            F.col("operated_flights") - F.col("route_disrupted_flights")
+            F.col("operated_flights") - F.col("route_disrupted_flights"),
         )
         .withColumn(
             "departure_otp_15_pct",
             F.when(
                 F.col("operated_as_planned_flights") > 0,
                 F.col("on_time_departures") / F.col("operated_as_planned_flights"),
-            ).otherwise(F.lit(0.0))
+            ).otherwise(F.lit(0.0)),
         )
         .withColumn(
             "arrival_otp_15_pct",
             F.when(
                 F.col("operated_as_planned_flights") > 0,
                 F.col("on_time_arrivals") / F.col("operated_as_planned_flights"),
-            ).otherwise(F.lit(0.0))
+            ).otherwise(F.lit(0.0)),
         )
     )
-
-    return result_df
