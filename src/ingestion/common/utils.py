@@ -20,14 +20,14 @@ def floor_to_4h_window(dt: datetime) -> datetime:
     return dt.replace(hour=window_hour, minute=0, second=0, microsecond=0)
 
 
-def get_target_window_start(delay_hours: int = 0, schedules: bool = False) -> str:
+def get_target_window_start(delay_hours: int = 0) -> str:
     """
     Determine the final target window start for ingestion.
 
     Steps:
     1. Take the current UTC timestamp.
     2. Round it down to the latest valid 4-hour window.
-    3. Apply the delay offset (subtract for historical, add for scheduled).
+    3. Apply the delay offset.
     4. Return as YYYY-MM-DDTHH:MM.
 
     Example:
@@ -38,10 +38,7 @@ def get_target_window_start(delay_hours: int = 0, schedules: bool = False) -> st
     run_time = datetime.now(UTC)
     window_start = floor_to_4h_window(run_time)
 
-    if schedules:
-        target_window = window_start + timedelta(hours=delay_hours)
-    else:
-        target_window = window_start - timedelta(hours=delay_hours)
+    target_window = window_start - timedelta(hours=delay_hours)
 
     return target_window.strftime("%Y-%m-%dT%H:%M")
 
