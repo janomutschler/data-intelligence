@@ -33,11 +33,11 @@ CDC_SOURCE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.flight_status_cdc_source"
 SCD2_TARGET_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.flight_status_history"
 CURRENT_TARGET_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.flight_status_current"
 
-@dp.temporary_view(name="flight_status_exploded_tmp")
-def flight_status_exploded_tmp():
+@dp.temporary_view(name="flight_status_base_tmp")
+def flight_status_base_tmp():
     """
     Read bronze flight status data incrementally, normalize array vs single-object payloads,
-    and explode to one row per flight.
+    explode to one row per flight, and select raw business fields.
     """
     bronze_df = spark.readStream.table(BRONZE_TABLE)
 
@@ -66,24 +66,14 @@ def flight_status_exploded_tmp():
         F.explode_outer(F.col("flights_array")),
     )
 
-    return exploded_df
-
-
-@dp.temporary_view(name="flight_status_base_tmp")
-def flight_status_base_tmp():
-    """
-    Extract raw business fields from exploded flight rows.
-    """
-    exploded_df = spark.readStream.table("flight_status_exploded_tmp")
-
     return exploded_df.select(
         *BASE_METADATA_COLUMNS,
         *BASE_FLIGHT_COLUMNS,
     )
 
 
-@dp.temporary_view(name="flight_status_times_tmp")
-def flight_status_times_tmp():
+@dp.temporary_view(name="flight_status_parsed_tmp")
+def flight_status_parsed_tmp():
     """
     Parse all operational date/time strings into timestamps.
     """
@@ -109,10 +99,10 @@ def flight_status_enriched_tmp():
     """
     Derive business keys, metrics, flags, request context, and lineage columns.
     """
-    times_df = spark.readStream.table("flight_status_times_tmp")
+    parsed_df = spark.readStream.table("flight_status_parsed_tmp")
 
     metrics_df = (
-        times_df
+        parsed_df
         .withColumn(
             "flight_date",
             F.coalesce(
