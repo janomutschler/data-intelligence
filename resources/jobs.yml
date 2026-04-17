@@ -29,6 +29,12 @@ resources:
             - task_key: run_operational_entrypoint_py
           pipeline_task:
             pipeline_id: ${resources.pipelines.operational-medallion-pipeline.id}
+        
+        - task_key: refresh_airport_ops_dashboard
+          depends_on:
+            - task_key: run_operational_medallion_pipeline
+          dashboard_task:
+            dashboard_id: ${resources.dashboards.airport_ops_dashboard.id}
 
       environments:
         - environment_key: Default
@@ -73,5 +79,30 @@ resources:
         - environment_key: Default
           spec:
             environment_version: "4"
+
+      performance_target: PERFORMANCE_OPTIMIZED
+
+
+
+    system_bootstrap:
+      name: system-bootstrap-${bundle.target}
+
+      email_notifications:
+        on_failure:
+          - jmutschl42@gmail.com
+
+      notification_settings:
+        no_alert_for_skipped_runs: true
+
+      tasks:
+        - task_key: run_reference_bootstrap
+          run_job_task:
+            job_id: ${resources.jobs.reference_end_to_end.id}
+
+        - task_key: run_operational_bootstrap
+          depends_on:
+            - task_key: run_reference_bootstrap
+          run_job_task:
+            job_id: ${resources.jobs.operational_end_to_end.id}
 
       performance_target: PERFORMANCE_OPTIMIZED

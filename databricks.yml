@@ -2,8 +2,8 @@ bundle:
   name: lh-data-platform
 
 include:
-  - resources/jobs/*.yml
-  - resources/pipelines/*.yml
+  - resources/*.yml
+
 
 sync:
   include:
@@ -14,6 +14,12 @@ variables:
     default: data_intelligence_${bundle.target}
   raw_volume_name:
     default: raw_lh_data
+  gold_schema:
+    default: gold
+  warehouse_id:
+    description: SQL warehouse for dashboard queries
+    default: env.warehouse_id
+
 
 targets:
   dev:
@@ -30,7 +36,16 @@ targets:
           prod: prod
     workspace:
       host: https://dbc-1189a44d-7664.cloud.databricks.com/
-      root_path: /Workspace/Users/jmutschl42@gmail.com/.bundle/${bundle.name}/${bundle.target}
+      root_path: /Workspace/Users/jmutschl42@gmail.com/.bundle/${bundle.name}/${bundle.target}    
+    resources:
+      jobs:       
+        reference_end_to_end:
+          schedule:
+            pause_status: UNPAUSED
+
+        operational_end_to_end:
+          schedule:
+            pause_status: UNPAUSED
 
 experimental:
   skip_name_prefix_for_schema: true
