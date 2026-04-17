@@ -1,89 +1,6 @@
 {
   "datasets": [
     {
-      "name": "892a2ee6",
-      "displayName": "test",
-      "queryLines": [
-        "SELECT *\n",
-        "FROM departure_airport_hourly\n",
-        "WHERE departure_airport_code = :airport\n",
-        "  AND flight_date BETWEEN :start_date AND :end_date"
-      ],
-      "parameters": [
-        {
-          "displayName": "Airport",
-          "keyword": "airport",
-          "dataType": "STRING",
-          "defaultSelection": {
-            "values": {
-              "dataType": "STRING",
-              "values": [
-                {
-                  "value": "FRA"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "displayName": "From",
-          "keyword": "start_date",
-          "dataType": "DATE",
-          "defaultSelection": {
-            "values": {
-              "dataType": "DATE",
-              "values": [
-                {
-                  "value": "now/y"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "displayName": "Till",
-          "keyword": "end_date",
-          "dataType": "DATE",
-          "defaultSelection": {
-            "values": {
-              "dataType": "DATE",
-              "values": [
-                {
-                  "value": "now/d"
-                }
-              ]
-            }
-          }
-        }
-      ],
-      "catalog": "workspace",
-      "schema": "default"
-    },
-    {
-      "name": "3395bc43",
-      "displayName": "new_test",
-      "queryLines": [
-        "SELECT\n",
-        "  flight_date,\n",
-        "  departure_airport_code,\n",
-        "  departure_hour,\n",
-        "  total_flights,\n",
-        "  cancelled_flights,\n",
-        "  route_disrupted_flights,\n",
-        "  operated_flights,\n",
-        "  operated_as_planned_flights,\n",
-        "  avg_departure_delay_minutes,\n",
-        "  avg_arrival_delay_minutes,\n",
-        "  on_time_departures,\n",
-        "  on_time_arrivals,\n",
-        "  departure_otp_15_pct,\n",
-        "  arrival_otp_15_pct\n",
-        "FROM departure_airport_hourly"
-      ],
-      "catalog": "data_intelligence_prod",
-      "schema": "gold"
-    },
-    {
       "name": "4987f4a9",
       "displayName": "section0_kpi",
       "queryLines": [
@@ -704,7 +621,7 @@
           },
           "position": {
             "x": 0,
-            "y": 2,
+            "y": 3,
             "width": 2,
             "height": 3
           }
@@ -789,7 +706,7 @@
           },
           "position": {
             "x": 6,
-            "y": 2,
+            "y": 3,
             "width": 2,
             "height": 3
           }
@@ -893,7 +810,7 @@
           },
           "position": {
             "x": 0,
-            "y": 23,
+            "y": 24,
             "width": 8,
             "height": 5
           }
@@ -1024,7 +941,7 @@
           },
           "position": {
             "x": 0,
-            "y": 14,
+            "y": 15,
             "width": 4,
             "height": 7
           }
@@ -1071,7 +988,7 @@
                         "condition": {
                           "operand": {
                             "type": "data-value",
-                            "value": "65"
+                            "value": "0.65"
                           },
                           "operator": "<"
                         },
@@ -1085,7 +1002,7 @@
                         "condition": {
                           "operand": {
                             "type": "data-value",
-                            "value": "50"
+                            "value": "0.5"
                           },
                           "operator": "<"
                         },
@@ -1100,7 +1017,7 @@
                         "condition": {
                           "operand": {
                             "type": "data-value",
-                            "value": "75"
+                            "value": "0.75"
                           },
                           "operator": "<"
                         },
@@ -1113,7 +1030,7 @@
                         "condition": {
                           "operand": {
                             "type": "data-value",
-                            "value": "85"
+                            "value": "0.85"
                           },
                           "operator": ">"
                         },
@@ -1127,7 +1044,7 @@
           },
           "position": {
             "x": 8,
-            "y": 2,
+            "y": 3,
             "width": 2,
             "height": 3
           }
@@ -1174,7 +1091,7 @@
           },
           "position": {
             "x": 2,
-            "y": 2,
+            "y": 3,
             "width": 2,
             "height": 3
           }
@@ -1223,7 +1140,7 @@
           },
           "position": {
             "x": 4,
-            "y": 2,
+            "y": 3,
             "width": 2,
             "height": 3
           }
@@ -1270,9 +1187,9 @@
                         "condition": {
                           "operand": {
                             "type": "data-value",
-                            "value": "1"
+                            "value": "0.01"
                           },
-                          "operator": ">"
+                          "operator": "<"
                         },
                         "color": "#00A972"
                       },
@@ -1280,9 +1197,9 @@
                         "condition": {
                           "operand": {
                             "type": "data-value",
-                            "value": "2"
+                            "value": "0.02"
                           },
-                          "operator": "<"
+                          "operator": ">"
                         },
                         "color": {
                           "themeColorType": "visualizationColors",
@@ -1293,9 +1210,9 @@
                         "condition": {
                           "operand": {
                             "type": "data-value",
-                            "value": "5"
+                            "value": "0.05"
                           },
-                          "operator": "<"
+                          "operator": ">"
                         },
                         "color": {
                           "themeColorType": "visualizationColors",
@@ -1307,9 +1224,9 @@
                         "condition": {
                           "operand": {
                             "type": "data-value",
-                            "value": "10"
+                            "value": "0.10"
                           },
-                          "operator": "<"
+                          "operator": ">"
                         },
                         "color": {
                           "themeColorType": "visualizationColors",
@@ -1326,7 +1243,7 @@
           },
           "position": {
             "x": 10,
-            "y": 2,
+            "y": 3,
             "width": 2,
             "height": 3
           }
@@ -1430,7 +1347,7 @@
           },
           "position": {
             "x": 4,
-            "y": 7,
+            "y": 8,
             "width": 8,
             "height": 7
           }
@@ -1570,7 +1487,7 @@
           },
           "position": {
             "x": 4,
-            "y": 14,
+            "y": 15,
             "width": 8,
             "height": 7
           }
@@ -1588,7 +1505,7 @@
           },
           "position": {
             "x": 0,
-            "y": 5,
+            "y": 6,
             "width": 12,
             "height": 2
           }
@@ -1696,7 +1613,7 @@
           },
           "position": {
             "x": 0,
-            "y": 7,
+            "y": 8,
             "width": 4,
             "height": 7
           }
@@ -1714,7 +1631,7 @@
           },
           "position": {
             "x": 0,
-            "y": 21,
+            "y": 22,
             "width": 12,
             "height": 2
           }
@@ -1807,7 +1724,7 @@
           },
           "position": {
             "x": 0,
-            "y": 28,
+            "y": 29,
             "width": 8,
             "height": 5
           }
@@ -1888,7 +1805,7 @@
           },
           "position": {
             "x": 8,
-            "y": 23,
+            "y": 24,
             "width": 4,
             "height": 10
           }
@@ -1906,7 +1823,7 @@
           },
           "position": {
             "x": 0,
-            "y": 33,
+            "y": 34,
             "width": 12,
             "height": 2
           }
@@ -2056,7 +1973,7 @@
           },
           "position": {
             "x": 0,
-            "y": 35,
+            "y": 36,
             "width": 6,
             "height": 7
           }
@@ -2212,7 +2129,7 @@
           },
           "position": {
             "x": 6,
-            "y": 35,
+            "y": 36,
             "width": 6,
             "height": 7
           }
@@ -2269,6 +2186,9 @@
                       "type": "max",
                       "places": 2
                     }
+                  },
+                  "axis": {
+                    "title": "Departure on Time Performance"
                   },
                   "scale": {
                     "type": "quantitative",
@@ -2332,7 +2252,7 @@
           },
           "position": {
             "x": 6,
-            "y": 42,
+            "y": 43,
             "width": 6,
             "height": 7
           }
@@ -2412,7 +2332,7 @@
           },
           "position": {
             "x": 0,
-            "y": 42,
+            "y": 43,
             "width": 6,
             "height": 7
           }
@@ -2516,25 +2436,17 @@
           },
           "position": {
             "x": 0,
-            "y": 49,
+            "y": 50,
             "width": 12,
             "height": 8
           }
-        }
-      ],
-      "pageType": "PAGE_TYPE_CANVAS",
-      "layoutVersion": "GRID_V1"
-    },
-    {
-      "name": "a00718ff",
-      "displayName": "Global Filters",
-      "layout": [
+        },
         {
           "widget": {
-            "name": "airport",
+            "name": "airport-1",
             "queries": [
               {
-                "name": "dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12ce809bc188fae16d08e8d534b80_airport_label",
+                "name": "dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c84a43cd8a5d681877e_airport_label",
                 "query": {
                   "datasetName": "07fb513d",
                   "fields": [
@@ -2551,7 +2463,7 @@
                 }
               },
               {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12ce51261109eb95e76701a4c91a8_airport",
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c7f9e4e07569e3c2180_airport",
                 "query": {
                   "datasetName": "4987f4a9",
                   "parameters": [
@@ -2564,7 +2476,7 @@
                 }
               },
               {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12cf839f3139a8d36ebf983b3e643_airport",
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c9b90c6dd9fe281f7d9_airport",
                 "query": {
                   "datasetName": "b41037c2",
                   "parameters": [
@@ -2577,7 +2489,7 @@
                 }
               },
               {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12cfaff7c1d8cab83917a43e20bbc_airport",
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c9fb2bab61af616ee36_airport",
                 "query": {
                   "datasetName": "810794e9",
                   "parameters": [
@@ -2590,7 +2502,7 @@
                 }
               },
               {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12cfdc0891ea485e8f5fda655624c_airport",
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1ca3a71f9ee94b91754a_airport",
                 "query": {
                   "datasetName": "d443609b",
                   "parameters": [
@@ -2603,7 +2515,7 @@
                 }
               },
               {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12d0304bc15f08a0cb75ca6622058_airport",
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1ca889b9af92a3914257_airport",
                 "query": {
                   "datasetName": "9d26ef3b",
                   "parameters": [
@@ -2616,7 +2528,7 @@
                 }
               },
               {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12d10379610308eee0a605a46ade5_airport",
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1cacab46d7039d214562_airport",
                 "query": {
                   "datasetName": "5de72e14",
                   "parameters": [
@@ -2629,13 +2541,173 @@
                 }
               },
               {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12d19506513f38ffca010b5f5436c_airport",
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1cb1a68069d0bc3d414d_airport",
                 "query": {
                   "datasetName": "d149d7d7",
                   "parameters": [
                     {
                       "name": "airport",
                       "keyword": "airport"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "selection": {
+                "defaultSelection": {
+                  "values": {
+                    "dataType": "STRING",
+                    "values": [
+                      {
+                        "value": "FRA - Frankfurt"
+                      }
+                    ]
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Airport"
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "airport_label",
+                    "queryName": "dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c84a43cd8a5d681877e_airport_label"
+                  },
+                  {
+                    "parameterName": "airport",
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c7f9e4e07569e3c2180_airport"
+                  },
+                  {
+                    "parameterName": "airport",
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c9b90c6dd9fe281f7d9_airport"
+                  },
+                  {
+                    "parameterName": "airport",
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c9fb2bab61af616ee36_airport"
+                  },
+                  {
+                    "parameterName": "airport",
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1ca3a71f9ee94b91754a_airport"
+                  },
+                  {
+                    "parameterName": "airport",
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1ca889b9af92a3914257_airport"
+                  },
+                  {
+                    "parameterName": "airport",
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1cacab46d7039d214562_airport"
+                  },
+                  {
+                    "parameterName": "airport",
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1cb1a68069d0bc3d414d_airport"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "date-range",
+            "queries": [
+              {
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c7f9e4e07569e3c2180_date_range",
+                "query": {
+                  "datasetName": "4987f4a9",
+                  "parameters": [
+                    {
+                      "name": "date_range",
+                      "keyword": "date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c9b90c6dd9fe281f7d9_date_range",
+                "query": {
+                  "datasetName": "b41037c2",
+                  "parameters": [
+                    {
+                      "name": "date_range",
+                      "keyword": "date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c9fb2bab61af616ee36_date_range",
+                "query": {
+                  "datasetName": "810794e9",
+                  "parameters": [
+                    {
+                      "name": "date_range",
+                      "keyword": "date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1ca3a71f9ee94b91754a_date_range",
+                "query": {
+                  "datasetName": "d443609b",
+                  "parameters": [
+                    {
+                      "name": "date_range",
+                      "keyword": "date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1ca889b9af92a3914257_date_range",
+                "query": {
+                  "datasetName": "9d26ef3b",
+                  "parameters": [
+                    {
+                      "name": "date_range",
+                      "keyword": "date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1cacab46d7039d214562_date_range",
+                "query": {
+                  "datasetName": "5de72e14",
+                  "parameters": [
+                    {
+                      "name": "date_range",
+                      "keyword": "date_range"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1cb1a68069d0bc3d414d_date_range",
+                "query": {
+                  "datasetName": "d149d7d7",
+                  "parameters": [
+                    {
+                      "name": "date_range",
+                      "keyword": "date_range"
                     }
                   ],
                   "disaggregated": false
@@ -2646,198 +2718,57 @@
               "version": 2,
               "frame": {
                 "showTitle": true,
-                "title": "Airport"
-              },
-              "widgetType": "filter-multi-select",
-              "encodings": {
-                "fields": [
-                  {
-                    "fieldName": "airport_label",
-                    "queryName": "dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12ce809bc188fae16d08e8d534b80_airport_label"
-                  },
-                  {
-                    "parameterName": "airport",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12ce51261109eb95e76701a4c91a8_airport"
-                  },
-                  {
-                    "parameterName": "airport",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12cf839f3139a8d36ebf983b3e643_airport"
-                  },
-                  {
-                    "parameterName": "airport",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12cfaff7c1d8cab83917a43e20bbc_airport"
-                  },
-                  {
-                    "parameterName": "airport",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12cfdc0891ea485e8f5fda655624c_airport"
-                  },
-                  {
-                    "parameterName": "airport",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12d0304bc15f08a0cb75ca6622058_airport"
-                  },
-                  {
-                    "parameterName": "airport",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12d10379610308eee0a605a46ade5_airport"
-                  },
-                  {
-                    "parameterName": "airport",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12d19506513f38ffca010b5f5436c_airport"
-                  }
-                ]
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 0,
-            "width": 1,
-            "height": 2
-          }
-        },
-        {
-          "widget": {
-            "name": "a6e85799",
-            "queries": [
-              {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12ce51261109eb95e76701a4c91a8_date_range",
-                "query": {
-                  "datasetName": "4987f4a9",
-                  "parameters": [
-                    {
-                      "name": "date_range",
-                      "keyword": "date_range"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              },
-              {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12cf839f3139a8d36ebf983b3e643_date_range",
-                "query": {
-                  "datasetName": "b41037c2",
-                  "parameters": [
-                    {
-                      "name": "date_range",
-                      "keyword": "date_range"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              },
-              {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12cfaff7c1d8cab83917a43e20bbc_date_range",
-                "query": {
-                  "datasetName": "810794e9",
-                  "parameters": [
-                    {
-                      "name": "date_range",
-                      "keyword": "date_range"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              },
-              {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12cfdc0891ea485e8f5fda655624c_date_range",
-                "query": {
-                  "datasetName": "d443609b",
-                  "parameters": [
-                    {
-                      "name": "date_range",
-                      "keyword": "date_range"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              },
-              {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12d0304bc15f08a0cb75ca6622058_date_range",
-                "query": {
-                  "datasetName": "9d26ef3b",
-                  "parameters": [
-                    {
-                      "name": "date_range",
-                      "keyword": "date_range"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              },
-              {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12d10379610308eee0a605a46ade5_date_range",
-                "query": {
-                  "datasetName": "5de72e14",
-                  "parameters": [
-                    {
-                      "name": "date_range",
-                      "keyword": "date_range"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              },
-              {
-                "name": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12d19506513f38ffca010b5f5436c_date_range",
-                "query": {
-                  "datasetName": "d149d7d7",
-                  "parameters": [
-                    {
-                      "name": "date_range",
-                      "keyword": "date_range"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 2,
-              "frame": {
-                "showTitle": true
+                "title": "Date Range"
               },
               "widgetType": "filter-date-range-picker",
               "encodings": {
                 "fields": [
                   {
                     "parameterName": "date_range",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12ce51261109eb95e76701a4c91a8_date_range"
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c7f9e4e07569e3c2180_date_range"
                   },
                   {
                     "parameterName": "date_range",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12cf839f3139a8d36ebf983b3e643_date_range"
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c9b90c6dd9fe281f7d9_date_range"
                   },
                   {
                     "parameterName": "date_range",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12cfaff7c1d8cab83917a43e20bbc_date_range"
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1c9fb2bab61af616ee36_date_range"
                   },
                   {
                     "parameterName": "date_range",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12cfdc0891ea485e8f5fda655624c_date_range"
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1ca3a71f9ee94b91754a_date_range"
                   },
                   {
                     "parameterName": "date_range",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12d0304bc15f08a0cb75ca6622058_date_range"
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1ca889b9af92a3914257_date_range"
                   },
                   {
                     "parameterName": "date_range",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12d10379610308eee0a605a46ade5_date_range"
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1cacab46d7039d214562_date_range"
                   },
                   {
                     "parameterName": "date_range",
-                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f12d19506513f38ffca010b5f5436c_date_range"
+                    "queryName": "parameter_dashboards/01f12cdce3e514929e400f891123ad1c/datasets/01f13a32e2cb1cb1a68069d0bc3d414d_date_range"
                   }
                 ]
               }
             }
           },
           "position": {
-            "x": 0,
+            "x": 6,
             "y": 2,
-            "width": 1,
-            "height": 2
+            "width": 6,
+            "height": 1
           }
         }
       ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "a00718ff",
+      "displayName": "Global Filters",
       "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
       "layoutVersion": "GRID_V1"
     }
