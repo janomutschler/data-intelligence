@@ -3,7 +3,9 @@
 ## Overview
 There are two orchestrated end-to-end flows, both defined as Jobs in the bundle:
 - `reference_end_to_end`: monthly reference ingestion + reference medallion pipeline
-- `operational_end_to_end`: 4-hourly operational ingestion + operational medallion pipeline (includes Gold)
+- `operational_end_to_end`: 4-hourly operational ingestion + operational medallion pipeline (includes Gold), then dashboard refresh
+
+The bundle also defines `system_bootstrap`, a convenience job that runs `reference_end_to_end` first and then `operational_end_to_end`.
 
 Schedules are currently configured as `PAUSED` (recommended for demos; unpause for production).
 
@@ -29,12 +31,18 @@ flowchart TD
 
   subgraph Operational_Job[operational_end_to_end]
     O1[Spark Python Task<br/>run_operational_entrypoint.py] --> O2[Pipeline Task<br/>operational-medallion-pipeline]
+    O2 --> O3[Dashboard Task<br/>refresh airport_ops_dashboard]
+  end
+
+  subgraph Bootstrap_Job[system_bootstrap]
+    B1[Run Job<br/>reference_end_to_end] --> B2[Run Job<br/>operational_end_to_end]
   end
 ```
 
 Important dependency:
 - Operational Gold distance/haul metrics join `silver.airports_current`.
 - Therefore: run `reference_end_to_end` at least once before the first operational run.
+- For a clean environment, `system_bootstrap` handles this ordering for you.
 
 ## Ingestion details
 
@@ -85,6 +93,7 @@ timeline
   section Job
     Spark Python ingestion : Calls Lufthansa API; writes JSON pages to UC volume; appends ingestion logs
     Pipeline task starts : DP pipeline triggered by job
+    Dashboard refresh : Lakeview dashboard refreshes after operational pipeline succeeds
   section DP
     Bronze : Auto Loader consumes new files; writes bronze.flight_status_raw
     Silver : Parses JSON; validates; writes quarantine + SCD2 history + current view

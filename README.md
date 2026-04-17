@@ -26,17 +26,21 @@ This repo is a Databricks Declarative Automation Bundle (DAB). The bundle define
 - Jobs:
   - `operational_end_to_end` (operational ingestion + medallion pipeline)
   - `reference_end_to_end` (reference ingestion + medallion pipeline)
+  - `system_bootstrap` (runs reference first, then operational)
 - Pipelines:
   - `operational-medallion-pipeline`
   - `reference-medallion-pipeline`
+- Dashboard:
+  - `airport_ops_dashboard` backed by the Gold schema
 
 ## Repository quick start
 
 ### Prerequisites
 1. Databricks workspace access (Unity Catalog enabled).
-2. Target Catalog exists
-2. Databricks CLI installed and authenticated.
-3. Secrets configured in Databricks:
+2. Target catalog exists before deployment (for example, `data_intelligence_dev`).
+3. Databricks CLI installed and authenticated.
+4. SQL warehouse available for Lakeview dashboard queries.
+5. Secrets configured in Databricks:
    - Secret scope: `lh-api`
    - Keys:
      - `client_id`
@@ -45,9 +49,12 @@ This repo is a Databricks Declarative Automation Bundle (DAB). The bundle define
 ### Validate + deploy the bundle (dev)
 From repo root:
 ```bash
+export BUNDLE_VAR_warehouse_id=<their-id>
 databricks bundle validate -t dev
 databricks bundle deploy -t dev
 ```
+
+The `BUNDLE_VAR_warehouse_id` environment variable is required because the bundle injects it into `resources/dashboard.yml` as `${var.warehouse_id}` for dashboard query execution.
 
 ### Run end-to-end (manual runs recommended for demos)
 Run **reference first** (creates/refreshes reference dimension tables used by Gold distance metrics):
@@ -60,7 +67,12 @@ Then run operational:
 databricks bundle run operational_end_to_end -t dev
 ```
 
-> Note: Schedules in `resources/jobs/*.yml` are set to `PAUSED` by default. For production scheduling, set `pause_status: UNPAUSED` or configure in the UI.
+Or run the bootstrap job, which runs reference and then operational in the correct order:
+```bash
+databricks bundle run system_bootstrap -t dev
+```
+
+> Note: Schedules in `resources/jobs.yml` are set to `PAUSED` by default for `dev`. The `prod` target overrides the reference and operational jobs to `UNPAUSED`.
 
 ## What tables you should see
 
@@ -96,9 +108,8 @@ Reference (SCD1 current dimensions + quarantine):
 - `<catalog>.gold.airport_distance_category_daily_performance`
 
 ## Documentation
-- `docs/ARCHITECTURE.md` – system architecture + medallion mapping
+- `docs/architecture.md` – system architecture + medallion mapping
 - `docs/REPO_STRUCTURE.md` – repo layout and rationale
 - `docs/PIPELINE.md` – job/pipeline flow, schedules, table lineage
 - `docs/DATA_QUALITY.md` – rules + actions (drop vs quarantine)
 - `docs/OPERATIONS_AND_DEPLOYMENT.md` – deploy/runbook/troubleshooting
-
