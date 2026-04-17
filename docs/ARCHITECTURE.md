@@ -29,7 +29,7 @@ Everything deploys as a Databricks Declarative Automation Bundle (formerly Asset
 The dashboard warehouse is supplied at deploy time with:
 
 ```bash
-export BUNDLE_VAR_warehouse_id=<their-id>
+export BUNDLE_VAR_warehouse_id=<your-sql-warehouse-id>
 ```
 
 ## Medallion mapping to repo artefacts

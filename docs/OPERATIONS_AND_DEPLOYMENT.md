@@ -19,7 +19,7 @@ Catalog naming convention (catalog has to be created manually before deployment)
 The bundle also requires a SQL warehouse id for dashboard queries. Set it as an environment-backed bundle variable before validating or deploying:
 
 ```bash
-export BUNDLE_VAR_warehouse_id=<their-id>
+export BUNDLE_VAR_warehouse_id=<your-sql-warehouse-id>
 ```
 
 This value is consumed by `resources/dashboard.yml` through `${var.warehouse_id}`.
@@ -28,13 +28,11 @@ This value is consumed by `resources/dashboard.yml` through `${var.warehouse_id}
 
 ### Validate
 ```bash
-export BUNDLE_VAR_warehouse_id=<their-id>
 databricks bundle validate -t dev
 ```
 
 ### Deploy
 ```bash
-export BUNDLE_VAR_warehouse_id=<their-id>
 databricks bundle deploy -t dev
 ```
 

@@ -49,7 +49,7 @@ This repo is a Databricks Declarative Automation Bundle (DAB). The bundle define
 ### Validate + deploy the bundle (dev)
 From repo root:
 ```bash
-export BUNDLE_VAR_warehouse_id=<their-id>
+export BUNDLE_VAR_warehouse_id=<your-sql-warehouse-id>
 databricks bundle validate -t dev
 databricks bundle deploy -t dev
 ```
