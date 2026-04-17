@@ -56,8 +56,8 @@
           }
         }
       ],
-      "catalog": "data_intelligence_prod",
-      "schema": "gold"
+      "catalog": "workspace",
+      "schema": "default"
     },
     {
       "name": "3395bc43",
@@ -2219,93 +2219,6 @@
         },
         {
           "widget": {
-            "name": "route-performance-volume-vs-delay",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "d149d7d7",
-                  "fields": [
-                    {
-                      "name": "route_label",
-                      "expression": "`route_label`"
-                    },
-                    {
-                      "name": "cancellation_rate",
-                      "expression": "`cancellation_rate`"
-                    },
-                    {
-                      "name": "total_flights",
-                      "expression": "`total_flights`"
-                    },
-                    {
-                      "name": "avg_departure_delay_minutes",
-                      "expression": "`avg_departure_delay_minutes`"
-                    }
-                  ],
-                  "filters": [
-                    {
-                      "expression": "IN_RANGE(`total_flights`, 10, NULL)"
-                    }
-                  ],
-                  "disaggregated": true
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "frame": {
-                "showTitle": true,
-                "showDescription": true,
-                "title": "Route Performance: Volume vs Delay",
-                "description": "Each point represents a route. Position shows flight volume and average delay, while bubble size indicates how often operations are disrupted."
-              },
-              "widgetType": "scatter",
-              "encodings": {
-                "x": {
-                  "fieldName": "total_flights",
-                  "displayName": "Total Flights",
-                  "scale": {
-                    "type": "quantitative",
-                    "domain": {
-                      "min": 0
-                    }
-                  }
-                },
-                "y": {
-                  "fieldName": "avg_departure_delay_minutes",
-                  "displayName": "Departure Delay Min",
-                  "scale": {
-                    "type": "quantitative",
-                    "domain": {
-                      "min": 0
-                    }
-                  }
-                },
-                "size": {
-                  "fieldName": "cancellation_rate",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Cancellation Rate"
-                },
-                "extra": [
-                  {
-                    "fieldName": "route_label"
-                  }
-                ]
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 57,
-            "width": 12,
-            "height": 12
-          }
-        },
-        {
-          "widget": {
             "name": "worst-routes-disruption-rate",
             "queries": [
               {
@@ -2314,8 +2227,8 @@
                   "datasetName": "d149d7d7",
                   "fields": [
                     {
-                      "name": "sum(route_disruption_rate)",
-                      "expression": "SUM(`route_disruption_rate`)"
+                      "name": "sum(departure_otp_15_pct)",
+                      "expression": "SUM(`departure_otp_15_pct`)"
                     },
                     {
                       "name": "sum(total_flights)",
@@ -2326,8 +2239,8 @@
                       "expression": "`route_label`"
                     },
                     {
-                      "name": "approx_percentile(route_disruption_rate, percentage=0_5)",
-                      "expression": "APPROX_PERCENTILE(`route_disruption_rate`, 0.5)"
+                      "name": "departure_otp_15_pct",
+                      "expression": "`departure_otp_15_pct`"
                     },
                     {
                       "name": "route",
@@ -2342,14 +2255,14 @@
               "version": 3,
               "frame": {
                 "showTitle": true,
-                "title": "Routes with Highest Route Disruptions",
+                "title": "Routes with Highest Departure On Time Performance",
                 "showDescription": true,
-                "description": "Displays routes most affected by diversions and reroutes."
+                "description": "Displays routes orderd by their On Time Performance."
               },
               "widgetType": "bar",
               "encodings": {
                 "x": {
-                  "fieldName": "approx_percentile(route_disruption_rate, percentage=0_5)",
+                  "fieldName": "departure_otp_15_pct",
                   "format": {
                     "type": "number-percent",
                     "decimalPlaces": {
@@ -2357,12 +2270,12 @@
                       "places": 2
                     }
                   },
-                  "displayName": "Disruption Rate",
                   "scale": {
                     "type": "quantitative",
                     "domain": {
                       "min": 0
-                    }
+                    },
+                    "reverse": false
                   }
                 },
                 "y": {
@@ -2382,7 +2295,7 @@
                   }
                 },
                 "color": {
-                  "fieldName": "sum(route_disruption_rate)",
+                  "fieldName": "sum(departure_otp_15_pct)",
                   "legend": {
                     "hide": true
                   },
@@ -2390,12 +2303,14 @@
                     "type": "quantitative",
                     "colorRamp": {
                       "mode": "scheme",
-                      "scheme": "reds"
+                      "scheme": "redyellowgreen"
                     },
                     "domain": {
-                      "min": 0,
+                      "min": 0.5,
+                      "mid": 0.8,
                       "max": 1
-                    }
+                    },
+                    "reverse": false
                   }
                 },
                 "label": {
