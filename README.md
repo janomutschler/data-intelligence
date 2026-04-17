@@ -118,3 +118,6 @@ Reference (SCD1 current dimensions + quarantine):
 - `docs/PIPELINE.md` – job/pipeline flow, schedules, table lineage
 - `docs/DATA_QUALITY.md` – rules + actions (drop vs quarantine)
 - `docs/OPERATIONS_AND_DEPLOYMENT.md` – deploy/runbook/troubleshooting
+<br>
+
+This project builds upon the Level 3 [Data Intelligence Track](https://github.com/arkadiahn/LEVEL3-projects/tree/main/data-intelligence) with Lufthansa Industry Solutions
