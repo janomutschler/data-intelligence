@@ -5,9 +5,12 @@
   - Databricks Declarative Automation Bundle definition: targets, variables, schemas, and the managed raw landing volume.
 
 - `resources/`
-  - `resources/jobs/operational.yml` – orchestration for operational ingestion + pipeline
-  - `resources/jobs/reference.yml` – orchestration for reference ingestion + pipeline
-  - `resources/pipelines/pipelines.yml` – pipeline definitions and library entry points
+  - `resources/jobs.yml` – orchestration for operational, reference, and bootstrap jobs
+  - `resources/pipelines.yml` – Lakeflow Spark Declarative Pipeline definitions and library entry points
+  - `resources/dashboard.yml` – Lakeview dashboard deployment, catalog/schema bindings, and SQL warehouse binding
+
+- `dashboard/`
+  - Lakeview dashboard source JSON deployed by the bundle.
 
 - `docs/`
   - Human-facing documentation (this folder).
@@ -47,13 +50,12 @@ flowchart TD
     A[Root] --> B[databricks.yml]
 
     A --> C[resources/]
-    C --> C1[jobs/]
-    C1 --> C11[operational.yml]
-    C1 --> C12[reference.yml]
-    C --> C2[pipelines/]
-    C2 --> C21[pipelines.yml]
+    C --> C1[jobs.yml]
+    C --> C2[pipelines.yml]
+    C --> C3[dashboard.yml]
 
     A --> D[docs/]
+    A --> H[dashboard/]
 
     A --> E[src/]
 
