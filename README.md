@@ -2,7 +2,10 @@
 
 A production-style lakehouse pipeline that ingests Lufthansa API data, lands raw JSON in Unity Catalog volumes, transforms it through a Medallion architecture (Bronze/Silver/Gold), and serves analytics-ready tables for dashboards.
 
-![Airport Operations Dashboard](./docs/preview_dashboard_section_1.png)
+![Airport Operations Dashboard](./docs/preview/preview_dashboard_section_1.png)
+
+[Dashboard documentation](./docs/DASHBOARD.md) | [Full dashboard preview](./docs/preview/preview_dashboard_full.pdf)
+
 ## Problem statement
 Operational flight performance data is high-volume, frequently updated, and often inconsistent across endpoints/runs. The goal of this project is to build an end-to-end, automated, reproducible pipeline that:
 - lands raw API payloads safely (schema-flexible),
@@ -109,7 +112,8 @@ Reference (SCD1 current dimensions + quarantine):
 - `<catalog>.gold.airport_distance_category_daily_performance`
 
 ## Documentation
-- `docs/architecture.md` – system architecture + medallion mapping
+- `docs/ARCHITECTURE.md` – system architecture + medallion mapping
+- `docs/DASHBOARD.md` – dashboard purpose, previews, metrics, data sources, and refresh flow
 - `docs/REPO_STRUCTURE.md` – repo layout and rationale
 - `docs/PIPELINE.md` – job/pipeline flow, schedules, table lineage
 - `docs/DATA_QUALITY.md` – rules + actions (drop vs quarantine)
