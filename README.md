@@ -3,7 +3,7 @@
 This branch contains an earlier version of the project where the data pipelines were implemented using custom PySpark logic instead of Databricks-native features such as:
 
 - Declarative Pipelines  
-- Auto Loader  
+- Auto Loader (was used in small parts)  
 
 The purpose of this implementation was to gain a deeper understanding of how data ingestion and transformation pipelines work under the hood, including:
 
