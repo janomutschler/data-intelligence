@@ -138,4 +138,28 @@ Reference (SCD1 current dimensions + quarantine):
 - `docs/OPERATIONS_AND_DEPLOYMENT.md` – deploy/runbook/troubleshooting
 <br>
 
+## 🧠 Implementation Notes
+
+### Alternative: Custom PySpark Implementation
+
+An earlier version of this project (see `custom-pyspark` branch) implements the data pipelines using pure PySpark instead of Databricks-native features such as Declarative Pipelines.
+
+This version was built to understand the underlying mechanics of data pipelines, including:
+- Manual schema handling
+- Incremental processing
+- Data normalization and transformations
+- Custom orchestration patterns
+
+The main branch reflects a more production-oriented approach, leveraging Databricks-native functionality for:
+- Maintainability
+- Scalability
+- Reliability
+- Observability
+
+This project therefore demonstrates both:
+- The ability to use modern platform features efficiently  
+- A solid understanding of how these systems work under the hood
+
+## Reference
+
 This project builds upon the Level 3 [Data Intelligence Track](https://github.com/arkadiahn/LEVEL3-projects/tree/main/data-intelligence) with Lufthansa Industry Solutions
