@@ -1,0 +1,108 @@
+resources:
+  jobs:
+    operational_end_to_end:
+      name: operational-end-to-end-${bundle.target}
+
+      email_notifications:
+        on_failure:
+          - jmutschl42@gmail.com
+
+      notification_settings:
+        no_alert_for_skipped_runs: true
+
+      schedule:
+        quartz_cron_expression: 45 5 0/4 * * ?
+        timezone_id: UTC
+        pause_status: PAUSED
+
+      tasks:
+        - task_key: run_operational_entrypoint_py
+          spark_python_task:
+            python_file: ../src/ingestion/run_operational_entrypoint.py
+            parameters:
+              - --catalog
+              - ${var.catalog_name}
+          environment_key: Default
+
+        - task_key: run_operational_medallion_pipeline
+          depends_on:
+            - task_key: run_operational_entrypoint_py
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.operational-medallion-pipeline.id}
+        
+        - task_key: refresh_airport_ops_dashboard
+          depends_on:
+            - task_key: run_operational_medallion_pipeline
+          dashboard_task:
+            dashboard_id: ${resources.dashboards.airport_ops_dashboard.id}
+
+      environments:
+        - environment_key: Default
+          spec:
+            environment_version: "4"
+
+      performance_target: PERFORMANCE_OPTIMIZED
+
+
+
+    reference_end_to_end:
+      name: reference-end-to-end-${bundle.target}
+
+      email_notifications:
+        on_failure:
+          - jmutschl42@gmail.com
+
+      notification_settings:
+        no_alert_for_skipped_runs: true
+
+      schedule:
+        quartz_cron_expression: 0 5 10 1 * ?
+        timezone_id: UTC
+        pause_status: PAUSED
+
+      tasks:
+        - task_key: run_reference_entrypoint_py
+          spark_python_task:
+            python_file: ../src/ingestion/run_reference_entrypoint.py
+            parameters:
+              - --catalog
+              - ${var.catalog_name}
+          environment_key: Default
+
+        - task_key: run_reference_medallion_pipeline
+          depends_on:
+            - task_key: run_reference_entrypoint_py
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.reference-medallion-pipeline.id}
+
+      environments:
+        - environment_key: Default
+          spec:
+            environment_version: "4"
+
+      performance_target: PERFORMANCE_OPTIMIZED
+
+
+
+    system_bootstrap:
+      name: system-bootstrap-${bundle.target}
+
+      email_notifications:
+        on_failure:
+          - jmutschl42@gmail.com
+
+      notification_settings:
+        no_alert_for_skipped_runs: true
+
+      tasks:
+        - task_key: run_reference_bootstrap
+          run_job_task:
+            job_id: ${resources.jobs.reference_end_to_end.id}
+
+        - task_key: run_operational_bootstrap
+          depends_on:
+            - task_key: run_reference_bootstrap
+          run_job_task:
+            job_id: ${resources.jobs.operational_end_to_end.id}
+
+      performance_target: PERFORMANCE_OPTIMIZED

@@ -16,14 +16,21 @@ flowchart LR
   C --> D[Bronze DP<br/>cloudFiles TEXT -> raw_json]
   D --> E[Silver DP<br/>parse + validate + quarantine]
   E --> F[Gold DP<br/>aggregations + KPI models]
-  F --> G[Dashboards BI<br/>Lakeview]
+  F --> G[Lakeview Dashboard<br/>SQL warehouse]
 ```
 
 ## Deployment architecture (as code)
 Everything deploys as a Databricks Declarative Automation Bundle (formerly Asset Bundle):
 - `databricks.yml` defines targets (`dev`, `prod`), the catalog naming convention, schemas, and the managed volume.
-- `resources/jobs/*.yml` defines orchestration workflows.
-- `resources/pipelines/pipelines.yml` defines the declarative pipelines and their library entrypoints.
+- `resources/jobs.yml` defines orchestration workflows, including ingestion, pipeline tasks, dashboard refresh, and bootstrap ordering.
+- `resources/pipelines.yml` defines the declarative pipelines and their library entrypoints.
+- `resources/dashboard.yml` defines the Lakeview dashboard and binds it to the configured SQL warehouse.
+
+The dashboard warehouse is supplied at deploy time with:
+
+```bash
+export BUNDLE_VAR_warehouse_id=<your-sql-warehouse-id>
+```
 
 ## Medallion mapping to repo artefacts
 
@@ -71,3 +78,4 @@ Reference (snapshot CDC/SCD1):
 - Store raw API payloads as files and Bronze JSON strings to be resilient to schema drift.
 - Use expectations + quarantine to make data quality behaviour explicit (and measurable).
 - Use SCD2 for operational event updates and SCD1 for reference dimensions.
+- Keep ingestion, medallion transformations, dashboard configuration, and orchestration in separate bundle resources so each operational concern can evolve independently.

@@ -1,6 +1,7 @@
+from config import GOLD_SCHEMA, SILVER_SCHEMA
+from gold.common import build_flight_flags, flight_flag_cols
 from pyspark import pipelines as dp
 from pyspark.sql import functions as F
-from config import SILVER_SCHEMA, GOLD_SCHEMA
 
 CATALOG = spark.conf.get("catalog")
 SILVER_FLIGHT_STATUS_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.flight_status_current"
@@ -62,7 +63,8 @@ def flight_status_airports_enriched_tmp():
 @dp.temporary_view(name="flight_status_distance_tmp")
 def flight_status_distance_tmp():
     """
-    Calculate route distance in kilometers and derive a haul category.
+    Calculate route distance in kilometers using the Haversine formula
+    and derive a short/medium/long haul category.
     """
     df = spark.read.table("flight_status_airports_enriched_tmp")
 
@@ -95,20 +97,20 @@ def flight_status_distance_tmp():
                 & F.col("arr_latitude").isNotNull()
                 & F.col("arr_longitude").isNotNull(),
                 distance_expr,
-            )
+            ),
         )
         .withColumn(
             "distance_category",
             F.when(F.col("distance_km") < 1500, F.lit("short_haul"))
              .when(F.col("distance_km") < 3500, F.lit("medium_haul"))
-             .when(F.col("distance_km") >= 3500, F.lit("long_haul"))
+             .when(F.col("distance_km") >= 3500, F.lit("long_haul")),
         )
     )
 
 
 @dp.table(
     name=GOLD_DISTANCE_TABLE,
-    comment="Daily operational performance KPIs by departure airport and distance category."
+    comment="Daily operational performance KPIs by departure airport and distance category.",
 )
 @dp.expect_all_or_drop(DISTANCE_EXPECTATIONS)
 def gold_airport_distance_category_daily_performance():
@@ -117,16 +119,11 @@ def gold_airport_distance_category_daily_performance():
     within each departure airport.
     """
     silver_df = spark.read.table("flight_status_distance_tmp")
-
-    is_cancelled = F.coalesce(F.col("is_cancelled"), F.lit(False))
-    is_diverted = F.coalesce(F.col("is_diverted"), F.lit(False))
-    is_rerouted = F.coalesce(F.col("is_rerouted"), F.lit(False))
-    is_route_disrupted = is_diverted | is_rerouted
-    is_operated = ~is_cancelled
-    is_operated_as_planned = is_operated & ~is_route_disrupted
+    flagged_df = build_flight_flags(silver_df)
+    is_cancelled, is_route_disrupted, _is_operated, is_operated_as_planned = flight_flag_cols()
 
     relevant_flights_df = (
-        silver_df
+        flagged_df
         .filter(F.col("distance_category").isNotNull())
         .filter(F.col("departure_airport_code").isNotNull())
         .filter(
@@ -141,7 +138,6 @@ def gold_airport_distance_category_daily_performance():
         & F.col("departure_delay_minutes").isNotNull()
         & (F.col("departure_delay_minutes") <= 15)
     )
-
     arrival_on_time = (
         is_operated_as_planned
         & F.col("arrival_delay_minutes").isNotNull()
@@ -150,11 +146,7 @@ def gold_airport_distance_category_daily_performance():
 
     aggregated_df = (
         relevant_flights_df
-        .groupBy(
-            "flight_date",
-            "departure_airport_code",
-            "distance_category",
-        )
+        .groupBy("flight_date", "departure_airport_code", "distance_category")
         .agg(
             F.count("*").alias("total_flights"),
             F.sum(is_cancelled.cast("int")).alias("cancelled_flights"),
@@ -174,38 +166,37 @@ def gold_airport_distance_category_daily_performance():
 
     return (
         aggregated_df
-        .withColumn(
-            "operated_flights",
-            F.col("total_flights") - F.col("cancelled_flights")
-        )
+        .withColumn("operated_flights", F.col("total_flights") - F.col("cancelled_flights"))
         .withColumn(
             "operated_as_planned_flights",
-            F.col("operated_flights") - F.col("route_disrupted_flights")
+            F.col("operated_flights") - F.col("route_disrupted_flights"),
         )
         .withColumn(
             "departure_otp_15_pct",
             F.when(
                 F.col("operated_as_planned_flights") > 0,
                 F.col("on_time_departures") / F.col("operated_as_planned_flights"),
-            ).otherwise(F.lit(0.0))
+            ).otherwise(F.lit(0.0)),
         )
         .withColumn(
             "arrival_otp_15_pct",
             F.when(
                 F.col("operated_as_planned_flights") > 0,
                 F.col("on_time_arrivals") / F.col("operated_as_planned_flights"),
-            ).otherwise(F.lit(0.0))
+            ).otherwise(F.lit(0.0)),
         )
         .withColumn(
-			"cancellation_rate",
-			F.when(F.col("total_flights") > 0,
-				F.col("cancelled_flights") / F.col("total_flights"))
-			.otherwise(F.lit(0.0))
-		)
-		.withColumn(
-			"route_disruption_rate",
-			F.when(F.col("operated_flights") > 0,
-				F.col("route_disrupted_flights") / F.col("operated_flights"))
-			.otherwise(F.lit(0.0))
-		)
-	)
+            "cancellation_rate",
+            F.when(
+                F.col("total_flights") > 0,
+                F.col("cancelled_flights") / F.col("total_flights"),
+            ).otherwise(F.lit(0.0)),
+        )
+        .withColumn(
+            "route_disruption_rate",
+            F.when(
+                F.col("operated_flights") > 0,
+                F.col("route_disrupted_flights") / F.col("operated_flights"),
+            ).otherwise(F.lit(0.0)),
+        )
+    )

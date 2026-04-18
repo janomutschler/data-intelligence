@@ -1,0 +1,8 @@
+resources:
+  dashboards:
+    airport_ops_dashboard:
+      display_name: "Airport Operations Dashboard"
+      file_path: ../dashboard/Airport-Operational-Performance-Dashboard.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      dataset_catalog: ${var.catalog_name}
+      dataset_schema: ${var.gold_schema}

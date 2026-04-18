@@ -18,6 +18,7 @@ from silver.operational.expressions import (
     parse_local_timestamp,
     parse_utc_timestamp,
 )
+from silver.operational.constants import FlightStatusCode
 from silver.operational.expectations import (
     IS_INVALID_FLIGHT_ROW,
     FLIGHT_STATUS_EXPECTATIONS,
@@ -32,11 +33,11 @@ CDC_SOURCE_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.flight_status_cdc_source"
 SCD2_TARGET_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.flight_status_history"
 CURRENT_TARGET_TABLE = f"{CATALOG}.{SILVER_SCHEMA}.flight_status_current"
 
-@dp.temporary_view(name="flight_status_exploded_tmp")
-def flight_status_exploded_tmp():
+@dp.temporary_view(name="flight_status_base_tmp")
+def flight_status_base_tmp():
     """
     Read bronze flight status data incrementally, normalize array vs single-object payloads,
-    and explode to one row per flight.
+    explode to one row per flight, and select raw business fields.
     """
     bronze_df = spark.readStream.table(BRONZE_TABLE)
 
@@ -65,24 +66,14 @@ def flight_status_exploded_tmp():
         F.explode_outer(F.col("flights_array")),
     )
 
-    return exploded_df
-
-
-@dp.temporary_view(name="flight_status_base_tmp")
-def flight_status_base_tmp():
-    """
-    Extract raw business fields from exploded flight rows.
-    """
-    exploded_df = spark.readStream.table("flight_status_exploded_tmp")
-
     return exploded_df.select(
         *BASE_METADATA_COLUMNS,
         *BASE_FLIGHT_COLUMNS,
     )
 
 
-@dp.temporary_view(name="flight_status_times_tmp")
-def flight_status_times_tmp():
+@dp.temporary_view(name="flight_status_parsed_tmp")
+def flight_status_parsed_tmp():
     """
     Parse all operational date/time strings into timestamps.
     """
@@ -108,10 +99,10 @@ def flight_status_enriched_tmp():
     """
     Derive business keys, metrics, flags, request context, and lineage columns.
     """
-    times_df = spark.readStream.table("flight_status_times_tmp")
+    parsed_df = spark.readStream.table("flight_status_parsed_tmp")
 
     metrics_df = (
-        times_df
+        parsed_df
         .withColumn(
             "flight_date",
             F.coalesce(
@@ -140,19 +131,19 @@ def flight_status_enriched_tmp():
         .withColumn("has_missing_status", F.col("flight_status_code").isNull())
         .withColumn(
             "is_landed",
-            F.coalesce(F.col("flight_status_code") == F.lit("LD"), F.lit(False)),
+            F.coalesce(F.col("flight_status_code") == F.lit(FlightStatusCode.LANDED), F.lit(False)),
         )
         .withColumn(
             "is_cancelled",
-            F.coalesce(F.col("flight_status_code") == F.lit("CD"), F.lit(False)),
+            F.coalesce(F.col("flight_status_code") == F.lit(FlightStatusCode.CANCELLED), F.lit(False)),
         )
         .withColumn(
             "is_diverted",
-            F.coalesce(F.col("flight_status_code") == F.lit("DV"), F.lit(False)),
+            F.coalesce(F.col("flight_status_code") == F.lit(FlightStatusCode.DIVERTED), F.lit(False)),
         )
         .withColumn(
             "is_rerouted",
-            F.coalesce(F.col("flight_status_code") == F.lit("RT"), F.lit(False)),
+            F.coalesce(F.col("flight_status_code") == F.lit(FlightStatusCode.REROUTED), F.lit(False)),
         )
     )
 

@@ -17,25 +17,21 @@ IS_INVALID_AIRCRAFT_ROW = IS_INVALID_AIRCRAFT_CODE | IS_INVALID_AIRCRAFT_NAME
 VALID_AIRCRAFT_CODE_EXPECTATION = "aircraft_code IS NOT NULL AND TRIM(aircraft_code) <> ''"
 VALID_AIRCRAFT_NAME_EXPECTATION = "aircraft_name IS NOT NULL AND TRIM(aircraft_name) <> ''"
 
+_aircraft_struct = StructType([
+    StructField("AircraftCode", StringType(), True),
+    StructField("Names", StructType([
+        StructField("Name", StructType([
+            StructField("@LanguageCode", StringType(), True),
+            StructField("$", StringType(), True),
+        ]), True)
+    ]), True),
+    StructField("AirlineEquipCode", StringType(), True),
+])
+
 aircraft_array_schema = StructType([
     StructField("AircraftResource", StructType([
         StructField("AircraftSummaries", StructType([
-            StructField(
-                "AircraftSummary",
-                ArrayType(
-                    StructType([
-                        StructField("AircraftCode", StringType(), True),
-                        StructField("Names", StructType([
-                            StructField("Name", StructType([
-                                StructField("@LanguageCode", StringType(), True),
-                                StructField("$", StringType(), True),
-                            ]), True)
-                        ]), True),
-                        StructField("AirlineEquipCode", StringType(), True),
-                    ])
-                ),
-                True,
-            )
+            StructField("AircraftSummary", ArrayType(_aircraft_struct), True),
         ]), True)
     ]), True)
 ])
@@ -43,20 +39,7 @@ aircraft_array_schema = StructType([
 aircraft_single_schema = StructType([
     StructField("AircraftResource", StructType([
         StructField("AircraftSummaries", StructType([
-            StructField(
-                "AircraftSummary",
-                StructType([
-                    StructField("AircraftCode", StringType(), True),
-                    StructField("Names", StructType([
-                        StructField("Name", StructType([
-                            StructField("@LanguageCode", StringType(), True),
-                            StructField("$", StringType(), True),
-                        ]), True)
-                    ]), True),
-                    StructField("AirlineEquipCode", StringType(), True),
-                ]),
-                True,
-            )
+            StructField("AircraftSummary", _aircraft_struct, True),
         ]), True)
     ]), True)
 ])

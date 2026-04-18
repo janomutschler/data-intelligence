@@ -6,14 +6,23 @@ Bundle deployments create/update:
 - Catalog + schemas + volume definitions (Unity Catalog)
 - Jobs (Lakeflow Jobs / Workflows)
 - Pipelines (Lakeflow Spark Declarative Pipelines)
+- Lakeview dashboard definition and its SQL warehouse binding
 
 ## Environments
 Targets are configured in `databricks.yml`:
 - `dev` (default, development mode)
 - `prod` (production mode, with root_path set)
 
-Catalog naming convention (Catalog has to be created manualy before deployment):
+Catalog naming convention (catalog has to be created manually before deployment):
 - `data_intelligence_${bundle.target}`
+
+The bundle also requires a SQL warehouse id for dashboard queries. Set it as an environment-backed bundle variable before validating or deploying:
+
+```bash
+export BUNDLE_VAR_warehouse_id=<your-sql-warehouse-id>
+```
+
+This value is consumed by `resources/dashboard.yml` through `${var.warehouse_id}`.
 
 ## Deploy + run (CLI)
 
@@ -27,6 +36,13 @@ databricks bundle validate -t dev
 databricks bundle deploy -t dev
 ```
 
+> If you are not using the `DEFAULT` cli profile, specify your profile:
+
+```bash
+databricks bundle validate -t dev --profile <your-profile>
+databricks bundle deploy -t dev --profile <your-profile>
+```
+
 ### Run jobs manually (recommended for demos)
 Run reference first:
 ```bash
@@ -38,14 +54,20 @@ Then run operational:
 databricks bundle run operational_end_to_end -t dev
 ```
 
+Or run the bootstrap job, which runs reference first and operational second:
+
+```bash
+databricks bundle run system_bootstrap -t dev
+```
+
 ## Scheduling
 Jobs include a `schedule` block with:
 - `quartz_cron_expression`
 - `timezone_id` (UTC in repo)
-- `pause_status` (PAUSED in repo)
+- `pause_status` (`PAUSED` for the base job definitions)
 
 To enable scheduling for production:
-- update YAML to `pause_status: UNPAUSED`, redeploy the bundle
+- deploy the `prod` target, which overrides the reference and operational jobs to `UNPAUSED`
   OR
 - unpause directly in the Databricks UI
 
@@ -98,4 +120,4 @@ Actions:
 Symptoms:
 - distance category Gold table fails (missing `silver.airports_current`)
 Action:
-- run `reference_end_to_end` first
+- run `reference_end_to_end` first, or use `system_bootstrap` for a first-time environment

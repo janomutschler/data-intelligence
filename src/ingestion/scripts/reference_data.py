@@ -3,38 +3,37 @@ Handles ingestion of reference data from Lufthansa API
 and stores raw JSON into Unity Catalog volumes.
 """
 import json
+import logging
 import time
 from functools import partial
-
-from config import (
-    BASE_URL,
-    SLEEP_SECONDS,
-    REFERENCE_CONFIG,
-)
+from typing import Callable
 
 from common.api_client import request_with_retry
-from common.utils import utc_now_str
+from common.context import IngestionContext
+from common.logging import append_reference_data_log, create_reference_data_log_table
 from common.paths import reference_data_directory
 from common.storage import mkdirs, write_json
-from common.logging import (
-    create_reference_data_log_table,
-    append_reference_data_log,
+from common.utils import get_target_window_start, utc_now_str
+from config import (
+    BASE_URL,
+    REFERENCE_CONFIG,
+    SLEEP_SECONDS,
 )
 
-REFERENCE_TYPES = list(REFERENCE_CONFIG.keys())
+logger = logging.getLogger(__name__)
 
+REFERENCE_TYPES = list(REFERENCE_CONFIG.keys())
 LIMIT = 100
 
 
-def fetch_reference_pages(
-    ctx,
-    reference_type: str,
-) -> int:
+def fetch_reference_pages(ctx: IngestionContext, reference_type: str) -> int:
     """
     Fetch all paginated pages for one reference dataset.
     Returns the number of successfully saved pages.
     """
-    log_func = partial(append_reference_data_log, ctx.spark, ctx.run_id)
+    log_func: Callable = partial(
+        append_reference_data_log, ctx.spark, ctx.catalog, ctx.run_id
+    )
 
     offset = 0
     page = 0
@@ -45,6 +44,7 @@ def fetch_reference_pages(
     resource_name = reference_type_config["resource_name"]
 
     directory = reference_data_directory(
+        catalog=ctx.catalog,
         reference_type=reference_type,
         reference_date=reference_date,
         run_id=ctx.run_id,
@@ -70,10 +70,7 @@ def fetch_reference_pages(
             "file_path": file_path,
         }
 
-        print(
-            f"[reference] type={reference_type} "
-            f"page={page} offset={offset}"
-        )
+        logger.info("[reference] type=%s page=%d offset=%d", reference_type, page, offset)
 
         response = request_with_retry(
             session=ctx.session,
@@ -84,17 +81,12 @@ def fetch_reference_pages(
         )
 
         if response is None:
-            print("Request failed after retries.")
-            break
-
-        if response.status_code != 200:
-            print(f"Request failed: {response.status_code} {response.text[:300]}")
             break
 
         try:
             data = response.json()
         except ValueError:
-            print("Invalid JSON response.")
+            logger.error("Invalid JSON in response — stopping pagination.")
             log_func(
                 {
                     "timestamp_utc": utc_now_str(),
@@ -114,7 +106,7 @@ def fetch_reference_pages(
         )
 
         if total_count is None:
-            print("Missing TotalCount, stopping pagination.")
+            logger.warning("Missing TotalCount in response — stopping pagination.")
             log_func(
                 {
                     "timestamp_utc": utc_now_str(),
@@ -145,13 +137,11 @@ def fetch_reference_pages(
             }
         )
 
-        print(f"Saved: {file_path}")
-        print(f"Total records: {total_count}")
-
+        logger.info("Saved %s — total records: %d", file_path, total_count)
         successful_pages += 1
 
         if offset + LIMIT >= total_count:
-            print("No more pages.")
+            logger.info("All pages fetched for %s.", reference_type)
             break
 
         offset += LIMIT
@@ -161,26 +151,23 @@ def fetch_reference_pages(
     return successful_pages
 
 
-def run_reference_ingestion(ctx) -> int:
+def run_reference_ingestion(ctx: IngestionContext) -> int:
     """
     Run ingestion for all reference datasets.
-
     Returns the total number of successfully saved pages.
     """
-    total_pages = 0
-
-    for reference_type in REFERENCE_TYPES:
-        print(f"Starting ingestion for: {reference_type}")
-        total_pages += fetch_reference_pages(ctx, reference_type)
-
-    print(f"Total reference pages fetched: {total_pages}")
+    total_pages = sum(
+        fetch_reference_pages(ctx, reference_type)
+        for reference_type in REFERENCE_TYPES
+    )
+    logger.info("Reference ingestion complete. Total pages fetched: %d", total_pages)
     return total_pages
 
-def init_reference_ingestion(spark) -> str:
-    """
-    Ensure required log table exists and return run_id for this execution.
-    """
-    create_reference_data_log_table(spark)
-    run_id = utc_now_str()
 
-    return run_id
+def init_reference_ingestion(spark, catalog: str) -> str:
+    """
+    Ensure required log table exists and return the run_id for this execution.
+    """
+    create_reference_data_log_table(spark, catalog)
+    return utc_now_str()
+

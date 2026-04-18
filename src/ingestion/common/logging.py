@@ -5,12 +5,15 @@ from pyspark.sql.types import (
     StringType,
     IntegerType,
 )
-from config import CATALOG, SCHEMA
+from config import SCHEMA
 
 
-FLIGHT_STATUS_LOG_TABLE = f"{CATALOG}.{SCHEMA}.ingestion_log_flight_status"
-REFERENCE_DATA_LOG_TABLE = f"{CATALOG}.{SCHEMA}.ingestion_log_reference_data"
-SCHEDULES_LOG_TABLE = f"{CATALOG}.{SCHEMA}.ingestion_log_schedules"
+def _flight_status_log_table(catalog: str) -> str:
+    return f"{catalog}.{SCHEMA}.ingestion_log_flight_status"
+
+
+def _reference_data_log_table(catalog: str) -> str:
+    return f"{catalog}.{SCHEMA}.ingestion_log_reference_data"
 
 
 flight_status_log_schema = StructType([
@@ -55,9 +58,10 @@ reference_data_log_schema = StructType([
 ])
 
 
-def create_flight_status_log_table(spark) -> None:
+def create_flight_status_log_table(spark, catalog: str) -> None:
+    table = _flight_status_log_table(catalog)
     spark.sql(f"""
-    CREATE TABLE IF NOT EXISTS {FLIGHT_STATUS_LOG_TABLE} (
+    CREATE TABLE IF NOT EXISTS {table} (
         log_date STRING,
         run_id STRING,
         timestamp_utc STRING,
@@ -82,9 +86,10 @@ def create_flight_status_log_table(spark) -> None:
     """)
 
 
-def create_reference_data_log_table(spark) -> None:
+def create_reference_data_log_table(spark, catalog: str) -> None:
+    table = _reference_data_log_table(catalog)
     spark.sql(f"""
-    CREATE TABLE IF NOT EXISTS {REFERENCE_DATA_LOG_TABLE} (
+    CREATE TABLE IF NOT EXISTS {table} (
         log_date STRING,
         run_id STRING,
         timestamp_utc STRING,
@@ -107,26 +112,27 @@ def create_reference_data_log_table(spark) -> None:
     """)
 
 
-
-def _append_log(spark, table_name: str, schema: StructType, run_id: str, record: dict) -> None:
-    """
-    saves log in normalized format to table
-    """
+def _append_log(
+    spark,
+    table_name: str,
+    schema: StructType,
+    run_id: str,
+    record: dict,
+) -> None:
     normalized_record = {
         **record,
         "run_id": run_id,
         "log_date": record.get("log_date") or record.get("timestamp_utc", "")[:10] or None,
         "params_json": json.dumps(record.get("params")) if record.get("params") is not None else None,
     }
-
     df = spark.createDataFrame([normalized_record], schema=schema)
     df.write.format("delta").mode("append").saveAsTable(table_name)
 
 
-def append_flight_status_log(spark, run_id: str, record: dict) -> None:
-    _append_log(spark, FLIGHT_STATUS_LOG_TABLE, flight_status_log_schema, run_id, record)
+def append_flight_status_log(spark, catalog: str, run_id: str, record: dict) -> None:
+    _append_log(spark, _flight_status_log_table(catalog), flight_status_log_schema, run_id, record)
 
 
-def append_reference_data_log(spark, run_id: str, record: dict) -> None:
-    _append_log(spark, REFERENCE_DATA_LOG_TABLE, reference_data_log_schema, run_id, record)
+def append_reference_data_log(spark, catalog: str, run_id: str, record: dict) -> None:
+    _append_log(spark, _reference_data_log_table(catalog), reference_data_log_schema, run_id, record)
 
