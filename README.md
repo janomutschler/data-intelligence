@@ -39,6 +39,18 @@ This repo is a Databricks Declarative Automation Bundle (DAB). The bundle define
 
 ## Repository quick start
 
+### ⚠️ Lufthansa API Access
+
+The Lufthansa OpenAPI registration process can be unreliable.
+At the time of writing their sign up form is not working.
+
+To get access, you may need to:
+1. Create an account on the [Mashery Developer Portal](https://support.mashery.com/member/register)
+2. Log in with that account at [Lufthansa Developer Network](https://developer.lufthansa.com)
+3. Then create an application to obtain:
+   - `client_id` (Key)
+   - `client_secret` (Secret)
+
 ### Prerequisites
 1. Databricks workspace access (Unity Catalog enabled).
 2. Target catalog exists before deployment (for example, `data_intelligence_dev`).
@@ -56,6 +68,12 @@ From repo root:
 export BUNDLE_VAR_warehouse_id=<your-sql-warehouse-id>
 databricks bundle validate -t dev
 databricks bundle deploy -t dev
+```
+
+> If you are not using the `DEFAULT` cli profile, specify your profile:
+
+```bash
+databricks bundle deploy -t dev --profile <your-profile>
 ```
 
 The `BUNDLE_VAR_warehouse_id` environment variable is required because the bundle injects it into `resources/dashboard.yml` as `${var.warehouse_id}` for dashboard query execution.

@@ -36,6 +36,13 @@ databricks bundle validate -t dev
 databricks bundle deploy -t dev
 ```
 
+> If you are not using the `DEFAULT` cli profile, specify your profile:
+
+```bash
+databricks bundle validate -t dev --profile <your-profile>
+databricks bundle deploy -t dev --profile <your-profile>
+```
+
 ### Run jobs manually (recommended for demos)
 Run reference first:
 ```bash
